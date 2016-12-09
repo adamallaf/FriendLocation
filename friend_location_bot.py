@@ -54,6 +54,7 @@ class FriendLocationBot:
         #functions
         start_handler = CommandHandler('start', self.start)
         loc_handler = CommandHandler('me', self.askLoc)
+        info_handler = CommandHandler('info', self.infoList)
         makemap_handler = CommandHandler('now', self.giveLocs)
         locadd_handler = MessageHandler(Filters.location, self.getLoc)
 
@@ -64,6 +65,7 @@ class FriendLocationBot:
 
         #Add all the handlers to the dispatcher
         dispatcher.add_handler(start_handler)
+        dispatcher.add_handler(info_handler)
         dispatcher.add_handler(loc_handler)
         dispatcher.add_handler(locadd_handler)
         dispatcher.add_handler(makemap_handler)
@@ -135,6 +137,16 @@ class FriendLocationBot:
 
         bot.sendMessage(chat_id=update.message.chat_id, text=text)
 
+    def infoList(self, bot, update):
+        text = "User's available \n"
+        for loc in self.locationArray:
+            text += loc.userName 
+            text += " last seen " 
+            text += str(loc.timeStamp)
+            text += "\n"
+        bot.sendMessage(chat_id=update.message.chat_id, text=text)
+
+
     #return the generated map with all the locations
     def giveLocs(self, bot, update):
         #Args to see if the call wants only a specific area
@@ -171,12 +183,10 @@ class FriendLocationBot:
             if(not(availableLocs)):
                 bot.sendMessage(chat_id=update.message.chat_id, 
                     reply_to_message_id=update.message.message_id,
-                    text="You have no friends, or they just simply haven't" +
+                    text="You have no friends, or they just simply haven't " +
                     "added their location"
                     )
                 return
-
-
         #Construct the Url to send to google Maps API in exchange for the map
         url = self.constructUrl(availableLocs)
         bot.sendPhoto(chat_id=update.message.chat_id, photo=url)
