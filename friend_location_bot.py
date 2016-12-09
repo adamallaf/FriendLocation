@@ -121,9 +121,9 @@ class FriendLocationBot:
         if len(upD) == 0:
             self.locationArray.append(locObj)
             
-            text = "Added " + locObj["userName"]
-            text += " at location " + str(locObj["longitude"])
-            text += ", " + str(locObj["latitude"])
+            text = "Added " + locObj.userName
+            text += " at location " + str(locObj.longitude)
+            text += ", " + str(locObj.latitude)
         #List is not empty, update location
         else:
             upObj = upD[0]
@@ -168,6 +168,14 @@ class FriendLocationBot:
         else:
             #Simply return all the locations
             availableLocs = self.locationArray
+            if(not(availableLocs)):
+                bot.sendMessage(chat_id=update.message.chat_id, 
+                    reply_to_message_id=update.message.message_id,
+                    text="You have no friends, or they just simply haven't" +
+                    "added their location"
+                    )
+                return
+
 
         #Construct the Url to send to google Maps API in exchange for the map
         url = self.constructUrl(availableLocs)
