@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Friend Location</string>
     <string name="action_settings">Settings</string>
+    <string name="service_description">This service regularly sends
+        the device\'s location to
+        the Telegram FriendLocation Bot.</string>
 </resources>
