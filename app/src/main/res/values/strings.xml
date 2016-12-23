@@ -4,4 +4,6 @@
     <string name="service_description">This service regularly sends
         the device\'s location to
         the Telegram FriendLocation Bot.</string>
+    <string name="enable_prompt">Send location</string>
+    <string name="update_interval_string">Update Interval (in minutes)</string>
 </resources>

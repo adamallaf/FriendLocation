@@ -15,17 +15,18 @@ public class MainService extends IntentService
 
     protected void onHandleIntent(Intent intent)
     {
-        LocationResult result = LocationResult.extractResult(intent);
-
-        if (result != null)
+        if (LocationResult.hasResult(intent))
         {
-            Location location = result.getLastLocation();
+            Location location = LocationResult.extractResult(intent).getLastLocation();
 
+            System.out.print("Location update received: ");
             System.out.print(location.getLongitude());
             System.out.print(", ");
             System.out.println(location.getLatitude());
 
             // TODO: Send location info to Telegram Bot
         }
+        else
+            System.out.println("Location update received, but response was empty :(");
     }
 }
