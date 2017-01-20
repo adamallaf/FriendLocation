@@ -62,8 +62,44 @@ There are three types of pull queries:
     <li>Location Pull Queries</li>
     <li>Region Pull Queries</li>
     <li>Region Edit Queries</li>
-    <li>Region Check Query</li>
+    <li>Region Check Queries</li>
 </ul>
+</p>
+
+<h1>Responses</h1>
+<p>
+A response is simply what the backend sends back to the client upon
+received a query from it.
+</p>
+
+<h1>Protocol</h1>
+
+<p>
+Clients communicate with the backend using the TCP/IP protocol.
+All communication is wrapped in JSON objects. This means that all
+queries and responses are constructed using the JSON format.
+</p>
+
+<p>
+The communication happens in the following order:
+<ol>
+    <li>The backend waits for a query from a client.</li>
+    <li>The backend receives a query from the client.</li>
+    <li>The backend processes the query.</li>
+    <li>The backend sends a response to the client.</li>
+    <li>Go back to step 1.</li>
+</ol>
+</p>
+
+<p>
+The rest of this section describes all the different types of
+queries and their corresponding responses in detail.
+</p>
+
+<h2>Location Push Queries</h2>
+<p>
+A Location Push Query is a push query that sends the client's current
+location to the backend.
 </p>
 
 </body>
