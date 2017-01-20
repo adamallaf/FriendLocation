@@ -1,0 +1,71 @@
+<html>
+
+<head>
+<meta name="charset" value="utf-8">
+<title>The Backend</title>
+</head>
+
+<body>
+
+<h1>The Backend</h1>
+
+<h2>Features</h2>
+
+<p>
+The "backend" allows us to do the following:
+<ul>
+    <li>Know where our friends are (possibly restricted to a specific region)</li>
+    <li>Let our friends know where we are</li>
+</ul>
+</p>
+
+<p>
+This is achieved with "push" and "pull" queries.
+</p>
+
+<p>
+A push query is any query that sends information to the backend.
+A pull query is any query that retrieves information from the backend.
+</p>
+
+<h2>Regions</h2>
+
+<p>
+A region is an n-polygon that defines an area on the surface of the earth.
+<ul>
+    <li>The backend has pre-defined regions.</li>
+    <li>Users can define their own regions. (push query)</li>
+    <li>Users can edit previously defined regions. (push query)</li>
+    <li>Users can see regions defined by other users. (pull query)</li>
+    <li>Users can check if a specific region has been defined. (pull query)</li>
+</ul>
+</p>
+
+<h2>Queries</h2>
+<p>There are two types of queries: push and pull queries.</p>
+
+<h3>Push Queries</h3>
+<p>
+A push query is any query that sends information to the backend.
+There are two types of push queries:
+<ul>
+    <li>Location Push Queries</li>
+    <li>Region Push Queries</li>
+</ul>
+</p>
+
+<h3>Pull Queries</h3>
+<p>
+A pull query is any query that receives information from the backend.
+There are three types of pull queries:
+<ul>
+    <li>Location Pull Queries</li>
+    <li>Region Pull Queries</li>
+    <li>Region Edit Queries</li>
+    <li>Region Check Query</li>
+</ul>
+</p>
+
+</body>
+
+</html>
