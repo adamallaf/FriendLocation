@@ -96,11 +96,142 @@ The rest of this section describes all the different types of
 queries and their corresponding responses in detail.
 </p>
 
+<h2>Location Objects</h2>
+<p>
+A Location object has the following JSON format:
+</p>
+
+<table border=1>
+    <tr>
+        <th>JSON Field</th>
+        <th>JSON Type</th>
+        <th>Description</th>
+    </tr>
+    
+    <tr>
+        <td>username</td>
+        <td>string</td>
+        <td>The username of the account whose location this object contains</td>
+    </tr>
+
+    <tr>
+        <td>longitude</td>
+        <td>float</td>
+        <td>The longitude of the account whose location this object contains</td>
+    </tr>
+    
+    <tr>
+        <td>latitude</td>
+        <td>float</td>
+        <td>The latitude of the account whose location this object contains</td>
+    </tr>
+
+</table>
+
 <h2>Location Push Queries</h2>
 <p>
 A Location Push Query is a push query that sends the client's current
 location to the backend.
 </p>
+
+<p>
+The request JSON object has the following format:
+</p>
+<table border=1>
+    <tr>
+        <th>JSON Field</th>
+        <th>JSON Type</th>
+        <th>Value</th>
+        <th>Description</th>
+    </tr>
+    
+    <tr>
+        <td>query</td>
+        <td>string</td>
+        <td>"location_push"</td>
+        <td>Describes the type of query</td>
+    </tr>
+
+    <tr>
+        <td>location</td>
+        <td>Location</td>
+        <td></td>
+        <td>A Location JSON object that contains the updated location</td>
+    </tr>
+</table>
+
+<p>
+The response JSON object has the following format:
+</p>
+
+<table border=1>
+    <tr>
+        <th>JSON Field</th>
+        <th>JSON Type</th>
+        <th>Description</th>
+    </tr>
+    
+    <tr>
+        <td>ok</td>
+        <td>boolean</td>
+        <td>Indicates whether the request was successful or not</td>
+    </tr>
+</table>
+
+<h2>Location Pull Queries</h2>
+<p>
+A Location Pull Query is a pull query that retrieves one or more
+locations from the backend
+</p>
+<p>
+The request JSON object has the following format:
+</p>
+<table border=1>
+    <tr>
+        <th>JSON Field</th>
+        <th>JSON Type</th>
+        <th>Value</th>
+        <th>Description</th>
+    </tr>
+    
+    <tr>
+        <td>query</td>
+        <td>string</td>
+        <td>"location_pull"</td>
+        <td>Describes the type of query</td>
+    </tr>
+
+    <tr>
+        <td>usernames</td>
+        <td>string</td>
+        <td></td>
+        <td>The usernames of the account whose locations are being retrieved</td>
+    </tr>
+</table>
+
+<p>
+The response JSON object has the following format:
+</p>
+
+<table border=1>
+    <tr>
+        <th>JSON Field</th>
+        <th>JSON Type</th>
+        <th>Description</th>
+    </tr>
+    
+    <tr>
+        <td>ok</td>
+        <td>boolean</td>
+        <td>Indicates whether the request was successful or not</td>
+    </tr>
+
+    <tr>
+        <td>locations</td>
+        <td>array of Location objects</td>
+        <td>The locations of the requested usernames as an array</td>
+    </tr>
+</table>
 
 </body>
 
