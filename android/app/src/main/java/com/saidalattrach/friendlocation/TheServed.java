@@ -8,12 +8,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 public class TheServed
 {
     private static final String HOST = "archoniii.ddns.net";
     private static final int PORT = 30000;
+    private static final int TIME_OUT = 15;
 
     private static final int BUFFER_SIZE = 4096;
 
@@ -93,9 +96,12 @@ public class TheServed
         }
     }
 
-    private static JSONObject sendQuery(JSONObject query) throws IOException
+    private static JSONObject sendQuery(JSONObject query)
+            throws IOException
     {
-        Socket socket = new Socket(HOST, PORT);
+        Socket socket = new Socket();
+
+        socket.connect(new InetSocketAddress(HOST, PORT), TIME_OUT);
 
         OutputStream out = socket.getOutputStream();
         InputStream in = socket.getInputStream();

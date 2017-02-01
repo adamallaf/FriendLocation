@@ -7,6 +7,7 @@ import android.location.Location;
 import com.google.android.gms.location.LocationResult;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 
 public class MainService extends IntentService
 {
@@ -28,9 +29,14 @@ public class MainService extends IntentService
                         location.getLongitude(), location.getLatitude()));
                 System.out.println("Location sent to the server");
             }
+            catch (SocketTimeoutException e)
+            {
+                System.out.println("Failed to connect to the server. The server is not respoding.");
+                e.printStackTrace();
+            }
             catch (IOException e)
             {
-                System.out.println("Failed to send location to the server");
+                System.out.println("Failed to connect to the server. Check your internet conenction.");
                 e.printStackTrace();
             }
         }
