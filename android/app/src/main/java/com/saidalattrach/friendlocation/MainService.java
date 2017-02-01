@@ -6,6 +6,8 @@ import android.location.Location;
 
 import com.google.android.gms.location.LocationResult;
 
+import java.io.IOException;
+
 public class MainService extends IntentService
 {
     public MainService()
@@ -19,12 +21,18 @@ public class MainService extends IntentService
         {
             Location location = LocationResult.extractResult(intent).getLastLocation();
 
-            System.out.print("Location update received: ");
-            System.out.print(location.getLongitude());
-            System.out.print(", ");
-            System.out.println(location.getLatitude());
-
-            // TODO: Send location info to Telegram Bot
+            System.out.println("Attempting to send location to the server...");
+            try
+            {
+                TheServed.sendLocationPushQuery(new UserLocation("The Served",
+                        location.getLongitude(), location.getLatitude()));
+                System.out.println("Location sent to the server");
+            }
+            catch (IOException e)
+            {
+                System.out.println("Failed to send location to the server");
+                e.printStackTrace();
+            }
         }
         else
             System.out.println("Location update received, but response was empty :(");

@@ -12,33 +12,33 @@
 <h2>Features</h2>
 
 <p>
-The "backend" allows us to do the following:
-<ul>
-    <li>Know where our friends are (possibly restricted to a specific region)</li>
-    <li>Let our friends know where we are</li>
-</ul>
+    The "backend" allows us to do the following:
+    <ul>
+        <li>Know where our friends are (possibly restricted to a specific region)</li>
+        <li>Let our friends know where we are</li>
+    </ul>
 </p>
 
 <p>
-This is achieved with "push" and "pull" queries.
+    This is achieved with "push" and "pull" queries.
 </p>
 
 <p>
-A push query is any query that sends information to the backend.
-A pull query is any query that retrieves information from the backend.
+    A push query is any query that sends information to the backend.
+    A pull query is any query that retrieves information from the backend.
 </p>
 
 <h2>Regions</h2>
 
 <p>
-A region is an n-polygon that defines an area on the surface of the earth.
-<ul>
-    <li>The backend has pre-defined regions.</li>
-    <li>Users can define their own regions. (push query)</li>
-    <li>Users can edit previously defined regions. (push query)</li>
-    <li>Users can see regions defined by other users. (pull query)</li>
-    <li>Users can check if a specific region has been defined. (pull query)</li>
-</ul>
+    A region is an n-polygon that defines an area on the surface of the earth.
+    <ul>
+        <li>The backend has pre-defined regions.</li>
+        <li>Users can define their own regions. (push query)</li>
+        <li>Users can edit previously defined regions. (push query)</li>
+        <li>Users can see regions defined by other users. (pull query)</li>
+        <li>Users can check if a specific region has been defined. (pull query)</li>
+    </ul>
 </p>
 
 <h2>Queries</h2>
@@ -46,42 +46,42 @@ A region is an n-polygon that defines an area on the surface of the earth.
 
 <h3>Push Queries</h3>
 <p>
-A push query is any query that sends information to the backend.
-There are two types of push queries:
-<ul>
-    <li>Location Push Queries</li>
-    <li>Region Push Queries</li>
-</ul>
+    A push query is any query that sends information to the backend.
+    There are two types of push queries:
+    <ul>
+        <li>Location Push Queries</li>
+        <li>Region Push Queries</li>
+    </ul>
 </p>
 
 <h3>Pull Queries</h3>
 <p>
-A pull query is any query that receives information from the backend.
-There are three types of pull queries:
-<ul>
-    <li>Location Pull Queries</li>
-    <li>Region Pull Queries</li>
-    <li>Region Edit Queries</li>
-    <li>Region Check Queries</li>
-</ul>
+    A pull query is any query that receives information from the backend.
+    There are three types of pull queries:
+    <ul>
+        <li>Location Pull Queries</li>
+        <li>Region Pull Queries</li>
+        <li>Region Edit Queries</li>
+        <li>Region Check Queries</li>
+    </ul>
 </p>
 
 <h1>Responses</h1>
 <p>
-A response is simply what the backend sends back to the client upon
-received a query from it.
+    A response is simply what the backend sends back to the client upon
+    received a query from it.
 </p>
 
 <h1>Protocol</h1>
 
 <p>
-Clients communicate with the backend using the TCP/IP protocol.
-All communication is wrapped in JSON objects. This means that all
-queries and responses are constructed using the JSON format.
+    Clients communicate with the backend using the TCP/IP protocol.
+    All communication is wrapped in UTF-8 encoded JSON objects. This means that all
+    queries and responses are constructed using the JSON format.
 </p>
 
 <p>
-The communication happens in the following order:
+    The communication happens in the following order:
 <ol>
     <li>The backend waits for a query from a client.</li>
     <li>The backend receives a query from the client.</li>
@@ -92,13 +92,48 @@ The communication happens in the following order:
 </p>
 
 <p>
-The rest of this section describes all the different types of
-queries and their corresponding responses in detail.
+    All queries have the following JSON fields:
+</p>
+<table border=1>
+    <tr>
+        <th>JSON Field</th>
+        <th>JSON Type</th>
+        <th>Description</th>
+    </tr>
+
+    <tr>
+        <td>query</td>
+        <td>string</td>
+        <td>A unique string that indicates the type of query</td>
+    </tr>
+</table>
+
+<p>
+    All responses have the following JSON fields:
+</p>
+<table border=1>
+    <tr>
+        <th>JSON Field</th>
+        <th>JSON Type</th>
+        <th>Description</th>
+    </tr>
+
+    <tr>
+        <td>ok</td>
+        <td>boolean</td>
+        <td>Indicates whether the query was successful or not</td>
+    </tr>
+</table>
+
+<p>
+    The rest of this section describes all the different types of
+    queries and their corresponding responses in detail.
 </p>
 
 <h2>Location Objects</h2>
+
 <p>
-A Location object has the following JSON format:
+    A Location object has the following JSON format:
 </p>
 
 <table border=1>
@@ -135,95 +170,65 @@ location to the backend.
 </p>
 
 <p>
-The request JSON object has the following format:
+    The "query" field of a Location Push Query must have the value "location_push".
+</p>
+
+<p>
+    The query JSON object has the following additional fields:
 </p>
 <table border=1>
     <tr>
         <th>JSON Field</th>
         <th>JSON Type</th>
-        <th>Value</th>
         <th>Description</th>
-    </tr>
-    
-    <tr>
-        <td>query</td>
-        <td>string</td>
-        <td>"location_push"</td>
-        <td>Describes the type of query</td>
     </tr>
 
     <tr>
         <td>location</td>
         <td>Location</td>
-        <td></td>
         <td>A Location JSON object that contains the updated location</td>
     </tr>
 </table>
 
 <p>
-The response JSON object has the following format:
+    The response JSON object doesn't have any additional fields.
 </p>
-
-<table border=1>
-    <tr>
-        <th>JSON Field</th>
-        <th>JSON Type</th>
-        <th>Description</th>
-    </tr>
-    
-    <tr>
-        <td>ok</td>
-        <td>boolean</td>
-        <td>Indicates whether the request was successful or not</td>
-    </tr>
-</table>
 
 <h2>Location Pull Queries</h2>
 <p>
-A Location Pull Query is a pull query that retrieves one or more
-locations from the backend
+    A Location Pull Query is a pull query that retrieves one or more
+    locations from the backend
 </p>
+
 <p>
-The request JSON object has the following format:
+    The "query" field of a Location Push Query must have the value "location_pull".
+</p>
+
+<p>
+    The query JSON object has the following additional fields:
 </p>
 <table border=1>
     <tr>
         <th>JSON Field</th>
         <th>JSON Type</th>
-        <th>Value</th>
         <th>Description</th>
-    </tr>
-    
-    <tr>
-        <td>query</td>
-        <td>string</td>
-        <td>"location_pull"</td>
-        <td>Describes the type of query</td>
     </tr>
 
     <tr>
         <td>usernames</td>
-        <td>string</td>
-        <td></td>
+        <td>array of strings</td>
         <td>The usernames of the account whose locations are being retrieved</td>
     </tr>
 </table>
 
 <p>
-The response JSON object has the following format:
+    The response JSON object has the following additional fields:
 </p>
-
 <table border=1>
     <tr>
         <th>JSON Field</th>
         <th>JSON Type</th>
         <th>Description</th>
-    </tr>
-    
-    <tr>
-        <td>ok</td>
-        <td>boolean</td>
-        <td>Indicates whether the request was successful or not</td>
     </tr>
 
     <tr>
