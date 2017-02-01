@@ -1,4 +1,4 @@
-from backend import Vector, LocationPoint
+from backend import Vector, LocationPoint, LocationArea
 
 x = LocationPoint(0,0)
 y = LocationPoint(0,2)
@@ -8,7 +8,55 @@ w = LocationPoint(2,1)
 z = LocationPoint(-2,1)
 v2 = Vector(w,z)
 
-v3 = Vector(LocationPoint(2,1),LocationPoint(1,1))
+v3 = Vector(LocationPoint(-1,3),LocationPoint(1,-2))
+rect1 = LocationPoint(0,0)
+rect2 = LocationPoint(0,-2) 
+rect3 = LocationPoint(-2, -2)
+rect4 = LocationPoint(-2, 0)
+
+def areaTest():
+    rect = LocationArea((rect1,rect2,rect3,rect4))
+    print("///////////////////////////////")
+    print("TESTING AREA OBJECT")
+    print("--------------------------------")
+    print("TEST WITH SQUARE AREA BEGIN")
+    print("Max Long " + str(rect.maxLong))
+    print("Min Long " + str(rect.minLong))
+    print("Max Lat  " + str(rect.maxLat))
+    print("Min Lat  " + str(rect.minLat))
+    print("Point out " )
+    printPoint(rect.point_out)
+    if(rect.isInside(rect.point_out)):
+        print("Point out is Inside FAILURE!")
+    else:
+        print("Point out is effectively Outside SUCCESS!")
+    print("Trying with Point (1,1)");
+    if(rect.isInside(LocationPoint(1,1))):
+        print("Point is Inside FAILURE!")
+    else:
+        print("Point is effectively Outside SUCCESS!")
+    print("Trying with Point (1,1)");
+    if(rect.isInside(LocationPoint(1,1))):
+        print("Point is Inside FAILURE!")
+    else:
+        print("Point is effectively Outside SUCCESS!")
+    print("Trying with Point (-1,-1)");
+    if(rect.isInside(LocationPoint(-1,-1))):
+        print("Point is Inside SUCCESS!")
+    else:
+        print("Point is effectively Outside FAILURE!")
+    print("Trying with Point (-1.5,-1.5)");
+    if(rect.isInside(LocationPoint(-1.1,-1.1))):
+        print("Point is Inside SUCCESS!")
+    else:
+        print("Point is effectively Outside FAILURE!")
+    print("Trying with Point (2.01 , 2.01)");
+    if(rect.isInside(LocationPoint(2.01,2.01))):
+        print("Point is Inside FAILURE!")
+    else:
+        print("Point is effectively Outside SUCCESS!")
+
+
 
 def printPoint(x):
     print("longitude: " + str(x.get_longitude()), end=" ")
@@ -41,6 +89,10 @@ def interTest():
         print("    TRUE Failure")
     else:
         print("    FALSE Success")
+    if(v3.intersects(v2)):
+        print("    TRUE Success")
+    else:
+        print("    FALSE Failure")
 
 def diffSignTest():
     print("Testing function _dif_sign")
@@ -67,3 +119,4 @@ def diffSignTest():
 
 diffSignTest()
 interTest()
+areaTest()
