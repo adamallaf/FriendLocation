@@ -1,3 +1,4 @@
+import json
 #Class that defines an area delimited by 4 points
 class LocationArea:
     def __init__(self, pointList):
@@ -77,12 +78,22 @@ class Vector:
         return (self._diff_sign(d1,d2) and self._diff_sign(d3,d4)) 
         
 
+class Database:
+    def __init__(self):
+        self.db = {}
+    def insert(self, locPoint):
+        self.db[locPoint.get_username()] = locPoint
+    def query_username(self, u_name):
+        return self.db.get(u_name)
+
+
+
 
 #Class to define a locationPoint object
 class LocationPoint:
     #def __init__(self, userName, userId, timeStamp, longitude, latitude):
-    def __init__(self, longitude, latitude):
-        #self.userName = userName
+    def __init__(self, username, longitude, latitude):
+        self.username = username
         #self.userId = userId
         #self.timeStamp = timeStamp
         self.longitude = longitude
@@ -96,3 +107,9 @@ class LocationPoint:
         return self.latitude
     def get_longitude(self):
         return self.longitude
+    def get_username(self):
+        return self.username
+    def to_json(self):
+        return json.dumps({'username': self.username, 'latitude' :
+            self.latitude, 'longitude' : self.longitude})
+
