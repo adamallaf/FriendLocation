@@ -112,8 +112,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     private void requesLocationUpdates()
     {
-        System.out.println("Requesting location updates...");
-
         LocationSettingsRequest request = new LocationSettingsRequest.Builder()
                 .addLocationRequest(locationRequest).build();
 

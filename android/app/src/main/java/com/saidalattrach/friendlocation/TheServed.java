@@ -10,12 +10,11 @@ import java.io.OutputStream;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 
 public class TheServed
 {
-    private static final String HOST = "archoniii.ddns.net";
-    private static final int PORT = 30000;
+    private static final String HOST = "46.101.220.28";
+    private static final int PORT = 5000;
     private static final int TIME_OUT = 15;
 
     private static final int BUFFER_SIZE = 4096;
@@ -80,7 +79,7 @@ public class TheServed
 
                 String username = locationObject.getString("username");
                 double longitude = locationObject.getDouble("longitude");
-                double latitude = locationObject.getDouble("latitutde");
+                double latitude = locationObject.getDouble("latitude");
 
                 UserLocation location = new UserLocation(username, longitude, latitude);
                 locations[i] = location;
@@ -101,21 +100,27 @@ public class TheServed
     {
         Socket socket = new Socket();
 
-        socket.connect(new InetSocketAddress(HOST, PORT), TIME_OUT);
+        socket.connect(new InetSocketAddress(HOST, PORT), TIME_OUT * 1000);
 
         OutputStream out = socket.getOutputStream();
         InputStream in = socket.getInputStream();
 
+        System.out.println(query.toString());
         out.write(query.toString().getBytes("UTF-8"));
+        out.write('\n'); // Because Freddy uses readline()
 
         byte[] buffer = new byte[BUFFER_SIZE];
-        in.read(buffer);
+        int responseLength = in.read(buffer);
+        if (responseLength != -1)
+            responseLength = 0;
 
         socket.close();
 
         try
         {
-            return new JSONObject(new String(buffer, "UTF-8"));
+            String response = new String(buffer, 0, responseLength, "UTF-8");
+            System.out.println(response);
+            return new JSONObject(response);
         }
         catch (JSONException e)
         {

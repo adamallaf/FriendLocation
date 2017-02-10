@@ -28,6 +28,15 @@ public class MainService extends IntentService
                 TheServed.sendLocationPushQuery(new UserLocation("The Served",
                         location.getLongitude(), location.getLatitude()));
                 System.out.println("Location sent to the server");
+                UserLocation[] locs = TheServed.sendLocationPullQuery(new String[] {"The Served"});
+                if (locs != null)
+                {
+                    for (UserLocation l : locs)
+                    {
+                        System.out.print(l.getLongitude() + ", ");
+                        System.out.println(l.getLatitude());
+                    }
+                }
             }
             catch (SocketTimeoutException e)
             {
