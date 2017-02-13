@@ -1,140 +1,136 @@
 package com.saidalattrach.friendlocation;
 
 import android.app.Activity;
-import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v7.widget.SwitchCompat;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.NumberPicker;
+import android.widget.TextView;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResult;
 
-public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener
+import org.w3c.dom.Text;
+
+public class MainActivity extends Activity
 {
-    private static final int SETTINGS_REQUEST_CODE = 0;
-    private static final int SERVICE_REQUEST_CODE = 1;
+    private static final int SETTINGS_REQUEST_CODE = 1;
 
     private static final int MIN_UPDATE_INTERVAL = 1;
     private static final int MAX_UPDATE_INTERVAL = 120;
     private static final int DEFAULT_UPDATE_INTERVAL = 30;
 
-    private GoogleApiClient client;
-    private LocationRequest locationRequest;
-    private PendingIntent serviceIntent;
+    private boolean isServiceBound = false;
 
+    private MainService service;
+    private Intent serviceIntent;
+    private ServiceConnection serviceConnection;
     private SwitchCompat enableToggle;
 
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
 
-        locationRequest = new LocationRequest();
+        serviceIntent = new Intent(this, MainService.class);
 
-        locationRequest.setInterval(DEFAULT_UPDATE_INTERVAL * 60 * 1000);
-        locationRequest.setFastestInterval(DEFAULT_UPDATE_INTERVAL * 60 * 1000);
+        serviceConnection = new ServiceConnection() {
+            public void onServiceConnected(ComponentName name, IBinder binder)
+            {
+                isServiceBound = true;
+                service = ((MainService.LocalBinder) binder).getService();
+                service.requesLocationUpdates((Status status) ->
+                {
+                    if (status.hasResolution())
+                    {
+                        try
+                        {
+                            status.startResolutionForResult(MainActivity.this, SETTINGS_REQUEST_CODE);
+                        } catch (Exception ignored) {}
+                    }
+                });
+            }
 
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-        serviceIntent = PendingIntent.getService(MainActivity.this, SERVICE_REQUEST_CODE,
-                new Intent(this, MainService.class), PendingIntent.FLAG_CANCEL_CURRENT);
+            public void onServiceDisconnected(ComponentName name)
+            {
+                isServiceBound = false;
+                service = null;
+            }
+        };
 
         setContentView(R.layout.activity_main);
 
         enableToggle = (SwitchCompat) findViewById(R.id.enable_update);
-
-        enableToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
+        enableToggle.setOnCheckedChangeListener((CompoundButton buttonView, boolean isChecked) ->
         {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
-            {
-                if (isChecked)
-                    requesLocationUpdates();
-                else
-                    removeLocationUpdates();
-            }
+            if (isChecked)
+                startMainService();
+            else
+                stopMainService();
         });
 
         NumberPicker picker = (NumberPicker) findViewById(R.id.update_interval_picker);
-
         picker.setMinValue(MIN_UPDATE_INTERVAL);
         picker.setMaxValue(MAX_UPDATE_INTERVAL);
         picker.setValue(DEFAULT_UPDATE_INTERVAL);
-
-        picker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener()
+        picker.setOnValueChangedListener((NumberPicker p, int oldVal, int newVal) ->
         {
-            public void onValueChange(NumberPicker picker, int oldVal, int newVal)
+            newVal *= 60 * 1000;
+            setUpdateInterval(newVal);
+        });
+
+        TextView textView = (TextView) findViewById(R.id.test_text);
+        textView.setOnTouchListener((View v, MotionEvent event) ->
+        {
+            if (service != null)
             {
-                newVal *= 60 * 1000;
-
-                locationRequest.setInterval(newVal);
-                locationRequest.setFastestInterval(newVal);
-
-                if (enableToggle.isChecked())
-                    requesLocationUpdates();
+                int a = 0;
             }
+            return true;
         });
     }
 
     protected void onStart()
     {
         super.onStart();
-        System.out.println("Building client and connecting...");
-        client = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .build();
-        client.connect();
+        if (enableToggle.isChecked())
+            startMainService();
+        else
+            stopMainService();
     }
 
     protected void onStop()
     {
         super.onStop();
-        System.out.println("Disconnecting client...");
-        client.disconnect();
+        if (service != null)
+            unbindService(serviceConnection);
     }
 
-    public void onConnected(Bundle bundle)
+    private void startMainService()
     {
-        if (enableToggle.isChecked())
-            requesLocationUpdates();
+        startService(serviceIntent);
+        bindService(serviceIntent, serviceConnection, 0);
+        if (isServiceBound)
+            unbindService(serviceConnection);
     }
 
-    private void requesLocationUpdates()
+    private void stopMainService()
     {
-        LocationSettingsRequest request = new LocationSettingsRequest.Builder()
-                .addLocationRequest(locationRequest).build();
-
-        PendingResult<LocationSettingsResult> result = LocationServices.SettingsApi
-                .checkLocationSettings(client, request);
-
-        result.setResultCallback(new ResultCallback<LocationSettingsResult>()
+        if (isServiceBound)
         {
-            public void onResult(LocationSettingsResult locationSettingsResult)
-            {
-                Status status = locationSettingsResult.getStatus();
+            unbindService(serviceConnection);
+            stopService(serviceIntent);
+        }
+    }
 
-                if (status.isSuccess())
-                    requestLocationUpdatesInternal();
-                else if (status.hasResolution())
-                {
-                    try
-                    {
-                        status.startResolutionForResult(MainActivity.this, SETTINGS_REQUEST_CODE);
-                    } catch (Exception ignored) {}
-                }
-            }
-        });
+    private void setUpdateInterval(long interval)
+    {
+        if (service != null)
+            service.setUpdateInterval(interval);
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
@@ -143,32 +139,13 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         if (requestCode == SETTINGS_REQUEST_CODE)
         {
             if (resultCode == RESULT_OK)
-                requestLocationUpdatesInternal();
+                service.requesLocationUpdates((Status status) ->
+                {
+                    if (!status.isSuccess())
+                        enableToggle.setChecked(false);
+                });
             else
                 enableToggle.setChecked(false);
         }
     }
-
-    private void requestLocationUpdatesInternal()
-    {
-        try
-        {
-            LocationServices.FusedLocationApi.requestLocationUpdates(client, locationRequest,
-                    serviceIntent);
-        } catch (SecurityException ignored) {}
-    }
-
-    private void removeLocationUpdates()
-    {
-        System.out.println("Removing location updates...");
-
-        try
-        {
-            LocationServices.FusedLocationApi.removeLocationUpdates(client, serviceIntent);
-        } catch (SecurityException ignored) {}
-    }
-
-    public void onConnectionSuspended(int i) {}
-
-    public void onConnectionFailed(ConnectionResult connectionResult) {}
 }
