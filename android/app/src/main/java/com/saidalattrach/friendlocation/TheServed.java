@@ -13,11 +13,17 @@ import java.net.Socket;
 
 public class TheServed
 {
-    private static final String HOST = "46.101.220.28";
     private static final int PORT = 5000;
     private static final int TIME_OUT = 15;
 
     private static final int BUFFER_SIZE = 4096;
+
+    private static String host = "46.101.220.28";
+
+    public static void setHost(String host)
+    {
+        TheServed.host = host;
+    }
 
     public static boolean sendLocationPushQuery(UserLocation location)
             throws IOException
@@ -100,7 +106,7 @@ public class TheServed
     {
         Socket socket = new Socket();
 
-        socket.connect(new InetSocketAddress(HOST, PORT), TIME_OUT * 1000);
+        socket.connect(new InetSocketAddress(host, PORT), TIME_OUT * 1000);
 
         OutputStream out = socket.getOutputStream();
         InputStream in = socket.getInputStream();
@@ -111,7 +117,7 @@ public class TheServed
 
         byte[] buffer = new byte[BUFFER_SIZE];
         int responseLength = in.read(buffer);
-        if (responseLength != -1)
+        if (responseLength == -1)
             responseLength = 0;
 
         socket.close();

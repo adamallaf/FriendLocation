@@ -1,21 +1,24 @@
 package com.saidalattrach.friendlocation;
 
 import android.app.Activity;
+
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.ServiceConnection;
+
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.v7.widget.SwitchCompat;
-import android.view.MotionEvent;
-import android.view.View;
+
+import android.view.KeyEvent;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.NumberPicker;
+
+import android.support.v7.widget.SwitchCompat;
 import android.widget.TextView;
 
 import com.google.android.gms.common.api.Status;
-
-import org.w3c.dom.Text;
 
 public class MainActivity extends Activity
 {
@@ -25,42 +28,17 @@ public class MainActivity extends Activity
     private static final int MAX_UPDATE_INTERVAL = 120;
     private static final int DEFAULT_UPDATE_INTERVAL = 30;
 
-    private boolean isServiceBound = false;
+    private int updateInterval = DEFAULT_UPDATE_INTERVAL;
 
-    private MainService service;
+    private boolean isServiceBound = false;
     private Intent serviceIntent;
     private ServiceConnection serviceConnection;
     private SwitchCompat enableToggle;
+    private MainService.LocalBinder localBinder;
 
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-
-        serviceIntent = new Intent(this, MainService.class);
-
-        serviceConnection = new ServiceConnection() {
-            public void onServiceConnected(ComponentName name, IBinder binder)
-            {
-                isServiceBound = true;
-                service = ((MainService.LocalBinder) binder).getService();
-                service.requesLocationUpdates((Status status) ->
-                {
-                    if (status.hasResolution())
-                    {
-                        try
-                        {
-                            status.startResolutionForResult(MainActivity.this, SETTINGS_REQUEST_CODE);
-                        } catch (Exception ignored) {}
-                    }
-                });
-            }
-
-            public void onServiceDisconnected(ComponentName name)
-            {
-                isServiceBound = false;
-                service = null;
-            }
-        };
 
         setContentView(R.layout.activity_main);
 
@@ -79,19 +57,58 @@ public class MainActivity extends Activity
         picker.setValue(DEFAULT_UPDATE_INTERVAL);
         picker.setOnValueChangedListener((NumberPicker p, int oldVal, int newVal) ->
         {
+            updateInterval = newVal;
             newVal *= 60 * 1000;
             setUpdateInterval(newVal);
         });
 
-        TextView textView = (TextView) findViewById(R.id.test_text);
-        textView.setOnTouchListener((View v, MotionEvent event) ->
+        EditText ipAddress = (EditText) findViewById(R.id.ip_address);
+        ipAddress.setOnEditorActionListener((TextView v, int actionId, KeyEvent event) ->
+                {
+                    TheServed.setHost(v.getText().toString());
+                    return true;
+                }
+        );
+
+        EditText username = (EditText) findViewById(R.id.username);
+        username.setOnEditorActionListener((TextView v, int actionId, KeyEvent event) ->
+                {
+                    if (localBinder != null)
+                        localBinder.setUsername(v.getText().toString());
+                    return true;
+                }
+        );
+
+        serviceIntent = new Intent(this, MainService.class);
+
+        serviceConnection = new ServiceConnection()
         {
-            if (service != null)
+            public void onServiceConnected(ComponentName name, IBinder binder)
             {
-                int a = 0;
+                isServiceBound = true;
+                localBinder = (MainService.LocalBinder) binder;
+                localBinder.getStatus((Status status) ->
+                {
+                    if (!status.isSuccess() && status.hasResolution())
+                    {
+                        try
+                        {
+                            status.startResolutionForResult(MainActivity.this, SETTINGS_REQUEST_CODE);
+                        } catch (IntentSender.SendIntentException ignored) {}
+                    }
+                    else
+                    {
+                        localBinder.setUsername(username.getText().toString());
+                        TheServed.setHost(ipAddress.getText().toString());
+                    }
+                });
             }
-            return true;
-        });
+
+            public void onServiceDisconnected(ComponentName name)
+            {
+                isServiceBound = false;
+            }
+        };
     }
 
     protected void onStart()
@@ -106,16 +123,14 @@ public class MainActivity extends Activity
     protected void onStop()
     {
         super.onStop();
-        if (service != null)
-            unbindService(serviceConnection);
+        unbindMainService();
     }
 
     private void startMainService()
     {
+        serviceIntent.putExtra("UPDATE_INTERVAL", updateInterval);
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, 0);
-        if (isServiceBound)
-            unbindService(serviceConnection);
     }
 
     private void stopMainService()
@@ -123,14 +138,24 @@ public class MainActivity extends Activity
         if (isServiceBound)
         {
             unbindService(serviceConnection);
-            stopService(serviceIntent);
+            isServiceBound = false;
+        }
+        stopService(serviceIntent);
+    }
+
+    private void unbindMainService()
+    {
+        if (isServiceBound)
+        {
+            unbindService(serviceConnection);
+            isServiceBound = false;
         }
     }
 
     private void setUpdateInterval(long interval)
     {
-        if (service != null)
-            service.setUpdateInterval(interval);
+        if (localBinder != null)
+            localBinder.setUpdateInterval(interval);
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
@@ -139,11 +164,7 @@ public class MainActivity extends Activity
         if (requestCode == SETTINGS_REQUEST_CODE)
         {
             if (resultCode == RESULT_OK)
-                service.requesLocationUpdates((Status status) ->
-                {
-                    if (!status.isSuccess())
-                        enableToggle.setChecked(false);
-                });
+                startMainService();
             else
                 enableToggle.setChecked(false);
         }
