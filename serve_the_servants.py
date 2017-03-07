@@ -53,6 +53,7 @@ class TheServant(socketserver.StreamRequestHandler):
                 latitude = location["latitude"]
             except KeyError:
                 raise BadRequestError("Bad formatted location Object")
+                jsonResp = json.dumps({'ok':False})
 
             
                 # create a location Object
@@ -62,7 +63,7 @@ class TheServant(socketserver.StreamRequestHandler):
                 self.the_database.insert(locObj)
                 # generate and send the json response
                 jsonResp = json.dumps({'ok':True})
-                self._sendResponse(jsonResp)
+            self._sendResponse(jsonResp)
 
     # Handle the pull requests
     def do_pull(self, jsonObj):
@@ -85,9 +86,6 @@ class TheServant(socketserver.StreamRequestHandler):
                 jsonResp = json.dumps({'ok': True, 'locations' : results})
                 # send the response
                 self._sendResponse(jsonResp)
-            
-
-        
 
 server = socketserver.TCPServer(("localhost", 80), TheServant)
 server.serve_forever()
