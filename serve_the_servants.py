@@ -12,6 +12,7 @@ class TheServant(socketserver.StreamRequestHandler):
     # handle requests
     def handle(self):
         try:
+            print("incoming connection ")
             self._getReq()
         except BadRequestError as e:
             print(e.typ)
@@ -27,6 +28,7 @@ class TheServant(socketserver.StreamRequestHandler):
         try:
             # Try to load the request and execute the method defined by it
             jsonObj = json.loads(req)
+            print("json parsed")
             SUPPORTED_REQUESTS[jsonObj['query']](jsonObj)
         except json.decoder.JSONDecodeError:
             raise BadRequestError("Not JSON")
@@ -38,6 +40,7 @@ class TheServant(socketserver.StreamRequestHandler):
 
     # Insert a location object into the database
     def do_push(self, jsonObj):
+        print("trying push")
         try:
             # try to parse the location Object
             location = jsonObj["location"]
@@ -52,15 +55,15 @@ class TheServant(socketserver.StreamRequestHandler):
                 longitude = location["longitude"]
                 latitude = location["latitude"]
             except KeyError:
-                raise BadRequestError("Bad formatted location Object")
+                raise BadRequestError("Bad formatted location Object") 
                 jsonResp = json.dumps({'ok':False})
-
-            
+            else: 
                 # create a location Object
                 locObj = LocationPoint(username, longitude, latitude)
 
                 # insert the object into the database
                 self.the_database.insert(locObj)
+                print("added the following ", locObj.username)
                 # generate and send the json response
                 jsonResp = json.dumps({'ok':True})
             self._sendResponse(jsonResp)
@@ -87,5 +90,5 @@ class TheServant(socketserver.StreamRequestHandler):
                 # send the response
                 self._sendResponse(jsonResp)
 
-server = socketserver.TCPServer(("localhost", 80), TheServant)
+server = socketserver.TCPServer(("0.0.0.0", 5000), TheServant)
 server.serve_forever()
