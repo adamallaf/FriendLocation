@@ -1,0 +1,6 @@
+- Logging
+- Change command names
+- Handle invalid tokens and keys
+- Cleaner URL construction
+- Remove hard-coded strings (maybe?)
+- Rename methods and variables
