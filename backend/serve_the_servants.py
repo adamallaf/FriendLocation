@@ -1,18 +1,20 @@
-import socketserver, json
-from backend import LocationPoint, Database
+import SocketServer, json
+from backend import LocationPoint
+from database import Database
 
 # Class for the bad request errors, in order to handle exceptions 
 class BadRequestError(Exception):
-    def __init__(self, typ):
-        self.typ = typ
+    def __init__(self, error_message):
+        self.error_message = error_message
 
-class TheServant(socketserver.StreamRequestHandler):
+class TheServant(SocketServer.StreamRequestHandler):
     the_database = Database()
+    the_database.connect()
 
     # handle requests
     def handle(self):
         try:
-            print("incoming connection ")
+            print("Incoming connection...")
             self._getReq()
         except BadRequestError as e:
             print(e.typ)
@@ -27,68 +29,60 @@ class TheServant(socketserver.StreamRequestHandler):
         req = self.rfile.readline().strip().decode('utf-8')
         try:
             # Try to load the request and execute the method defined by it
-            jsonObj = json.loads(req)
-            print("json parsed")
-            SUPPORTED_REQUESTS[jsonObj['query']](jsonObj)
-        except json.decoder.JSONDecodeError:
-            raise BadRequestError("Not JSON")
+            json_object = json.loads(req)
+            print("JSON parsed")
+            SUPPORTED_REQUESTS[json_object['query']](json_object)
+        # except json.decoder.JSONDecodeError:
+        #     raise BadRequestError("Not JSON")
         except KeyError:
             raise BadRequestError("Bad Formatted Request")
                 
-    def _sendResponse(self, jsResp):
-        self.wfile.write(bytearray(jsResp, 'utf-8'))
+    def _sendResponse(self, json_response):
+        self.wfile.write(bytearray(json_response, 'utf-8'))
 
     # Insert a location object into the database
-    def do_push(self, jsonObj):
-        print("trying push")
+    def do_push(self, json_object):
+        print("Trying push...")
         try:
-            # try to parse the location Object
-            location = jsonObj["location"]
-
+            # Try to parse the location object
+            location = json_object["location"]
         except KeyError:
-            #in case one of the necessary formats is not found
+            # In case one of the necessary formats is not found
             raise BadRequestError("No location field inside request")
         else:
-            # create the location Object
+            # Create the location Object
             try:
                 username = location["username"]
                 longitude = location["longitude"]
                 latitude = location["latitude"]
             except KeyError:
                 raise BadRequestError("Bad formatted location Object") 
-                jsonResp = json.dumps({'ok':False})
+                json_response = json.dumps({'ok': False})
             else: 
-                # create a location Object
-                locObj = LocationPoint(username, longitude, latitude)
+                # Create a location Object
+                location_object = LocationPoint(username, longitude, latitude)
 
                 # insert the object into the database
-                self.the_database.insert(locObj)
-                print("added the following ", locObj.username)
-                # generate and send the json response
-                jsonResp = json.dumps({'ok':True})
-            self._sendResponse(jsonResp)
+                self.the_database.push(location_object)
+                print("Added the following ", location_object.username)
+                # Generate and send the JSON response
+                json_response = json.dumps({'ok': True})
+            self._sendResponse(json_response)
 
     # Handle the pull requests
-    def do_pull(self, jsonObj):
+    def do_pull(self, json_response):
         try:
-            #fetch the location for each user
-            usernames = jsonObj["usernames"]
+            # Fetch the location for each user
+            usernames = json_object["usernames"]
         except KeyError:
-            raise BadRequestError("No field usernames")
+            raise BadRequestError("No field \"usernames\"")
         else:
-            # initialize an empty list with the results
-            results = []
-            # get the matches from the database
-            for uname in usernames:
-                results.append(self.the_database.query_username(uname).to_json())
-            # in case 1 element was not found
-            if None in results:
-                jsonResp = json.dumps({'ok': False})
-            else:
-                # generate the json response
-                jsonResp = json.dumps({'ok': True, 'locations' : results})
-                # send the response
-                self._sendResponse(jsonResp)
+            # Get the matches from the database
+            results = self.the_database.pull(usernames)
+            # Generate the JSON response
+            json_response = json.dumps({'ok': True, 'locations' : results})
+            # Send the response
+            self._sendResponse(json_response)
 
-server = socketserver.TCPServer(("0.0.0.0", 5000), TheServant)
+server = SocketServer.TCPServer(("0.0.0.0", 5000), TheServant)
 server.serve_forever()
