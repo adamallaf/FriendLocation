@@ -8,8 +8,14 @@ class BadRequestError(Exception):
         self.error_message = error_message
 
 class TheServant(SocketServer.StreamRequestHandler):
-    the_database = Database()
-    the_database.connect()
+    def setup(self):
+        SocketServer.StreamRequestHandler.setup(self)
+        self.the_database = Database()
+        self.the_database.connect()
+
+    def finish(self):
+        SocketServer.StreamRequestHandler.finish(self)
+        self.the_database.close()
 
     # handle requests
     def handle(self):
@@ -17,7 +23,7 @@ class TheServant(SocketServer.StreamRequestHandler):
             print("Incoming connection...")
             self._getReq()
         except BadRequestError as e:
-            print(e.typ)
+            print(e.error_message)
 
     # send a response. Takes a json object as paramter
 
@@ -32,8 +38,8 @@ class TheServant(SocketServer.StreamRequestHandler):
             json_object = json.loads(req)
             print("JSON parsed")
             SUPPORTED_REQUESTS[json_object['query']](json_object)
-        # except json.decoder.JSONDecodeError:
-        #     raise BadRequestError("Not JSON")
+        except ValueError:
+             raise BadRequestError("Not JSON")
         except KeyError:
             raise BadRequestError("Bad Formatted Request")
                 

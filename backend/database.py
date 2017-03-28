@@ -14,7 +14,8 @@ class Database:
         longitude = location_object.get_longitude()
         latitude = location_object.get_latitude()
         self.cur.execute("""INSERT INTO locations (username, longitude, latitude)
-            values (\"%s\", %s, %s);""", (username, longitude, latitude))
+            values (\"%s\", %s, %s) ON DUPLICATE KEY UPDATE longitude=%s, latitude=%s;""",
+            (username, longitude, latitude, longitude, latitude))
         self.db.commit()
     
     def pull(self, usernames):
