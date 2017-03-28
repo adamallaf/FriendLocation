@@ -76,7 +76,7 @@ class TheServant(SocketServer.StreamRequestHandler):
             self._sendResponse(json_response)
 
     # Handle the pull requests
-    def do_pull(self, json_response):
+    def do_pull(self, json_object):
         try:
             # Fetch the location for each user
             usernames = json_object["usernames"]
