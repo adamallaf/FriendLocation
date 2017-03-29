@@ -2,70 +2,81 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram.forcereply import ForceReply
 
 from socket import socket
+from database import Database
 
 import socket
 import json
 import key_extractor
 
 class FriendLocationBot:
-    def __init__(self, telegramToken, googleKey):
-        self.backend_addr = "archoniii.ddns.net"
-        self.backend_port = 30000
+    def __init__(self, telegram_token, google_key):
+        self.backend_address = "localhost"
+        self.backend_port = 5000
         self.buffer_size = 4096
 
-        self.baseUrl = "https://maps.googleapis.com/maps/api/staticmap"
-        self.key = googleKey
+        self.base_url = "https://maps.googleapis.com/maps/api/staticmap"
+        self.key = google_key
 
         self.areas = {
             "berlin": [13.082634, 13.766688, 52.337776, 52.676643],
             "tu": [13.319462, 13.331812, 52.509221, 52.517618]
         }
 
-        self.locationArray = []
-
-        start_handler = CommandHandler('start', self.start)
-        loc_handler = CommandHandler('me', self.askLoc)
-        makemap_handler = CommandHandler('now', self.giveLocs)
-        locadd_handler = MessageHandler(Filters.location, self.getLoc)
-
-        self.updater = Updater(token=telegramToken)
+        self.updater = Updater(token=telegram_token)
         dispatcher = self.updater.dispatcher
 
-        dispatcher.add_handler(start_handler)
-        dispatcher.add_handler(loc_handler)
-        dispatcher.add_handler(locadd_handler)
-        dispatcher.add_handler(makemap_handler)
+        dispatcher.add_handler(CommandHandler('start', self.start))
+        dispatcher.add_handler(CommandHandler('me', self.ask_location))
+        dispatcher.add_handler(CommandHandler('now', self.give_locations))
+        dispatcher.add_handler(MessageHandler(Filters.location, self.get_location))
 
     def run(self):
+        self.the_database = Database()
+        self.the_database.connect()
         self.updater.start_polling()
 
     def start(self, bot, update):
         bot.sendMessage(chat_id=update.message.chat_id,
             text="Ok, I'll need to gather all of your locations, if you want"
             + " to participate, send me the command /me")
-        self.locationArray = []
 
-    def askLoc(self, bot, update):
-        user = update.message.from_user.first_name
+    def ask_location(self, bot, update):
+        user = update.message.from_user
+        first_name = user.first_name
+        chat_id = update.message.chat_id
+
+        username = user.username
+        if username is None:
+            username = first_name
+
+        if update.message.chat.type == "group":
+            self.the_database.register_user(user.id, username, chat_id)
         
-        bot.sendMessage(chat_id=update.message.chat_id, 
-            reply_markup=ForceReply(force_reply=True, selective = True),
-            reply_to_message_id=update.message.message_id,
-            text="Send me your location, " + user)
+            bot.sendMessage(chat_id=chat_id, 
+                reply_markup=ForceReply(force_reply=True, selective=True),
+                reply_to_message_id=update.message.message_id,
+                text="Send me your location, " + first_name)
+        else:
+            bot.sendMessage(chat_id=chat_id, text="I only work for groups")
 
-    def getLoc(self, bot, update):
-        userName = update.message.from_user.first_name
-        userId  = update.message.from_user.id
-        longitude = update.message.location.longitude
-        latitude  = update.message.location.latitude
+    def get_location(self, bot, update):
+        message = update.message
+        user = message.from_user
 
-        minLong = self.areas["berlin"][0]
-        maxLong = self.areas["berlin"][1]
-        minLat = self.areas["berlin"][2]
-        maxLat = self.areas["berlin"][3]
+        username = user.username
+        if username is None:
+            username = user.first_name
 
-        if (longitude < minLong or longitude > maxLong
-            or latitude < minLat or latitude > maxLat):
+        longitude = message.location.longitude
+        latitude  = message.location.latitude
+
+        min_long = self.areas["berlin"][0]
+        max_long = self.areas["berlin"][1]
+        min_lat = self.areas["berlin"][2]
+        max_lat = self.areas["berlin"][3]
+
+        if (longitude < min_long or longitude > max_long
+            or latitude < min_lat or latitude > max_lat):
             text = "I didn't add the location you provided because it is outside of Berlin."
             text += " Please give me a location in Berlin"
 
@@ -75,67 +86,82 @@ class FriendLocationBot:
 
             return
 
-        locObj = {
-            "id" : userId,
-            "userName": userName,
+        location_object = {
+            "username": username,
             "longitude" : longitude,
             "latitude"  : latitude
         }
 
-        upD = [obj for obj in self.locationArray if obj["id"] == locObj["id"]]
-            
-        if len(upD) == 0:
-            self.locationArray.append(locObj)
-            
-            text = "Added " + locObj["userName"]
-            text += " at location " + str(locObj["longitude"])
-            text += ", " + str(locObj["latitude"])
-        else:
-            upD[0]["latitude"] = locObj["latitude"]
-            upD[0]["longitude"] = locObj["longitude"]
- 
-            text = "Updated location of " + upD[0]["userName"]
-            text += " to " + str(upD[0]["latitude"])
-            text += ", " + str(upD[0]["longitude"])
+        query = {"query" : "location_push", "location" : location_object}
 
-        bot.sendMessage(chat_id=update.message.chat_id, text=text)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.connect((self.backend_address, self.backend_port))
+                s.send(bytearray(json.dumps(query) + "\n", "utf-8"))
+                response = json.loads(str(s.recv(self.buffer_size), encoding="utf-8"))
+                if response["ok"] == True:
+                    text = "Updated location of " + user.first_name
+                    text += " to " + str(longitude)
+                    text += ", " + str(latitude)
+                    bot.sendMessage(chat_id=message.chat_id, text=text)
+                else:
+                    bot.sendMessage(chat_id=message.chat_id,
+                        text="Failed to update location of " + location_object["username"])
+            except:
+                # For now
+                pass
 
-    def giveLocs(self, bot, update):
+    def give_locations(self, bot, update):
         args = update.message.text.split(" ")
 
-        availableLocs = []
+        location_array = []
+        available_locations = []
+
+        usernames = self.the_database.fetch_users(update.message.chat_id)
+        query = {"query" : "location_pull", "usernames" : usernames}
+
+        # Pull locations from The Backend
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.connect((self.backend_address, self.backend_port))
+                s.send(bytearray(json.dumps(query), "utf-8"))
+                response = json.loads(str(s.recv(self.buffer_size), encoding="utf-8"))
+                location_array = response["locations"]
+            except:
+                # For now
+                pass
 
         if len(args) > 1:
             if args[1].lower() in self.areas.keys():
                 area = self.areas[args[1].lower()]
                 
-                minLong = area[0]
-                maxLong = area[1]
-                minLat = area[2]
-                maxLat = area[3]
+                min_long = area[0]
+                max_long = area[1]
+                min_lat = area[2]
+                max_lat = area[3]
 
-                for loc in self.locationArray:
+                for loc in location_array:
                     longitude = loc["longitude"]
                     latitude = loc["latitude"]
 
-                    if (longitude >= minLong and longitude <= maxLong
-                        and latitude >= minLat and latitude <= maxLat):
-                        availableLocs.append(loc)
+                    if (longitude >= min_long and longitude <= max_long
+                        and latitude >= min_lat and latitude <= max_lat):
+                        available_locations.append(loc)
 
-                if len(availableLocs) == 0:
-                    bot.sendMessage(chat_id=update.message.chat_id, 
+                if len(available_locations) == 0:
+                    bot.sendMessage(chat_id=update.message.chat_id,
                         reply_to_message_id=update.message.message_id,
-                        text="None of your friends are currently in this area")    
+                        text="None of your friends are currently in this area")
                     return            
             else:
-                bot.sendMessage(chat_id=update.message.chat_id, 
+                bot.sendMessage(chat_id=update.message.chat_id,
                     reply_to_message_id=update.message.message_id,
                     text="I don't know this area")
                 return
         else:
-            availableLocs = self.locationArray
+            available_locations = location_array
 
-        url = self.constructUrl(availableLocs)
+        url = self.construct_url(available_locations)
         bot.sendPhoto(chat_id=update.message.chat_id, photo=url)
 
         # Apology to Luis
@@ -144,39 +170,10 @@ class FriendLocationBot:
                 reply_to_message_id=update.message.message_id,
                 text="Sorry for being rude to you Luis. Will you forgive me?")
 
-    # Unused altervative to giveLocs for use with The Backend
-    def giveLocs2(self, bot, update):
-        args = update.message.text.split(" ")
-
-        availableLocs = []
-
-        # Pull locations from The Backend
-        with socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            # We need to figure out how to populate "usernames"
-            query = {"query" : "location_pull", "usernames" : []}
-
-            try:
-                s.connect((self.backend_addr, self.backend_port))
-                s.send(bytearray(json.dumps(query), "utf-8"))
-                response = json.loads(s.recv(self.buffer_size))
-                availableLocs = response["locations"]
-            except:
-                # For now
-                pass
-
-        if len(availableLocs) == 0:
-            bot.sendMessage(chat_id=update.message.chat_id, 
-                reply_to_message_id=update.message.message_id,
-                text="None of your friends are currently in this area")    
-            return
-
-        url = self.constructUrl(availableLocs)
-        bot.sendPhoto(chat_id=update.message.chat_id, photo=url)
-
-    def constructUrl(self, locations):
-        url = self.baseUrl + '?'
+    def construct_url(self, locations):
+        url = self.base_url + '?'
         url += 'size=1024x1024&'
-        center = self.calculateCenter(locations)
+        center = self.calculate_center(locations)
         url += 'center='
         url += str(center[0])
         url += ','
@@ -188,7 +185,7 @@ class FriendLocationBot:
         # Add all the longs and lats for each location object
         for obj in locations:
             url += 'markers=icon:https://chart.googleapis.com/chart?chst=d_bubble_text_small%26chld=bbT%257C'
-            url += str(obj["userName"])
+            url += str(obj["username"])
             url += '%257CB8EDFF%257C000000'
             url += '%7C'
             url += str(obj["latitude"])
@@ -198,7 +195,7 @@ class FriendLocationBot:
 
         return url
 
-    def calculateCenter(self, locations):
+    def calculate_center(self, locations):
         maxY = max([obj["longitude"] for obj in locations])
         minY = min([obj["longitude"] for obj in locations])
         maxX = max([obj["latitude"] for obj in locations])
@@ -210,6 +207,6 @@ class FriendLocationBot:
         return (centerX, centerY)
 
 if __name__ == "__main__":
-    flb = FriendLocationBot(key_extractor.getKey("telegram"),
-        key_extractor.getKey("google"))
+    flb = FriendLocationBot(key_extractor.get_key("telegram"),
+        key_extractor.get_key("google"))
     flb.run()
