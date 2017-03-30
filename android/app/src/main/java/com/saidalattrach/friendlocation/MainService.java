@@ -65,7 +65,7 @@ public class MainService extends Service implements LocationListener
             if (client.blockingConnect().isSuccess())
             {
                 if (checkLocationSettings())
-                    requestLocationUpdatesInternal();
+                    requestLocationUpdates();
                 else
                     stopSelf();
             }
@@ -100,7 +100,7 @@ public class MainService extends Service implements LocationListener
         return resolutionStatus.isSuccess();
     }
 
-    private void requestLocationUpdatesInternal()
+    private void requestLocationUpdates()
     {
         System.out.println("Requesting location updates");
         try
@@ -160,7 +160,7 @@ public class MainService extends Service implements LocationListener
             {
                 locationRequest.setInterval(interval);
                 locationRequest.setFastestInterval(interval);
-                requestLocationUpdatesInternal();
+                requestLocationUpdates();
             });
         }
 

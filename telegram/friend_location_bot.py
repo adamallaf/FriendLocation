@@ -25,22 +25,50 @@ class FriendLocationBot:
         self.updater = Updater(token=telegram_token)
         dispatcher = self.updater.dispatcher
 
-        dispatcher.add_handler(CommandHandler('start', self.start))
-        dispatcher.add_handler(CommandHandler('me', self.ask_location))
-        dispatcher.add_handler(CommandHandler('now', self.give_locations))
+        dispatcher.add_handler(CommandHandler("me", self.register_user))
+        dispatcher.add_handler(CommandHandler("out", self.unregister_user))
+        dispatcher.add_handler(CommandHandler("now", self.give_locations))
+        dispatcher.add_handler(CommandHandler("help", self.start))
         dispatcher.add_handler(MessageHandler(Filters.location, self.get_location))
+        dispatcher.add_handler(MessageHandler(Filters.status_update, self.start))
 
     def run(self):
         self.the_database = Database()
         self.the_database.connect()
         self.updater.start_polling()
+        self.updater.idle()
+        self.the_database.close()
 
     def start(self, bot, update):
         bot.sendMessage(chat_id=update.message.chat_id,
-            text="Ok, I'll need to gather all of your locations, if you want"
-            + " to participate, send me the command /me")
+            text=("Hi. I'm the Friend Location Bot."
+                " The following commands are available:\n\n"
+                "- /me Register yourself in this group. This means"
+                "that others in the group will be able to get your location.\n"
+                "- /out Unregister yourself out of this group. Others"
+                "in the group will not be able to get your location.\n"
+                "- /now Get a picture showing the locations of all registered users"
+                "in this group\n"
+                "- /help Show this message :)"))
 
-    def ask_location(self, bot, update):
+    def register_user(self, bot, update):
+        user = update.message.from_user
+        first_name = user.first_name
+        chat_id = update.message.chat_id
+
+        username = user.username
+        if username == "":
+            username = first_name
+
+        if update.message.chat.type == "group":
+            self.the_database.register_user(user.id, username, chat_id)
+        
+            bot.sendMessage(chat_id=chat_id, 
+                text="Registered user %s" % username)
+        else:
+            bot.sendMessage(chat_id=chat_id, text="I only work for groups")
+
+    def unregister_user(self, bot, update):
         user = update.message.from_user
         first_name = user.first_name
         chat_id = update.message.chat_id
@@ -49,22 +77,16 @@ class FriendLocationBot:
         if username is None:
             username = first_name
 
-        if update.message.chat.type == "group":
-            self.the_database.register_user(user.id, username, chat_id)
-        
-            bot.sendMessage(chat_id=chat_id, 
-                reply_markup=ForceReply(force_reply=True, selective=True),
-                reply_to_message_id=update.message.message_id,
-                text="Send me your location, " + first_name)
-        else:
-            bot.sendMessage(chat_id=chat_id, text="I only work for groups")
+        self.the_database.unregister_user(user.id, chat_id)
+
+        bot.sendMessage(chat_id=chat_id, text="Unregistered user %s" % username)
 
     def get_location(self, bot, update):
         message = update.message
         user = message.from_user
 
         username = user.username
-        if username is None:
+        if username == "":
             username = user.first_name
 
         longitude = message.location.longitude
@@ -77,8 +99,8 @@ class FriendLocationBot:
 
         if (longitude < min_long or longitude > max_long
             or latitude < min_lat or latitude > max_lat):
-            text = "I didn't add the location you provided because it is outside of Berlin."
-            text += " Please give me a location in Berlin"
+            text = """I didn't add the location you provided because it is outside of Berlin.
+                Please give me a location in Berlin"""
 
             bot.sendMessage(chat_id=update.message.chat_id, 
                 reply_to_message_id=update.message.message_id,
@@ -124,7 +146,7 @@ class FriendLocationBot:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
                 s.connect((self.backend_address, self.backend_port))
-                s.send(bytearray(json.dumps(query), "utf-8"))
+                s.send(bytearray(json.dumps(query) + "\n", "utf-8"))
                 response = json.loads(str(s.recv(self.buffer_size), encoding="utf-8"))
                 location_array = response["locations"]
             except:
@@ -171,35 +193,24 @@ class FriendLocationBot:
                 text="Sorry for being rude to you Luis. Will you forgive me?")
 
     def construct_url(self, locations):
-        url = self.base_url + '?'
-        url += 'size=1024x1024&'
         center = self.calculate_center(locations)
-        url += 'center='
-        url += str(center[0])
-        url += ','
-        url += str(center[1])
-        url += '&'
-        url += 'key=' + self.key
-        url += '&'
+        url = "%s?size=1024x1024&center=%f,%f&key=%s&" % (self.base_url,
+            center[0], center[1], self.key)
 
         # Add all the longs and lats for each location object
-        for obj in locations:
-            url += 'markers=icon:https://chart.googleapis.com/chart?chst=d_bubble_text_small%26chld=bbT%257C'
-            url += str(obj["username"])
-            url += '%257CB8EDFF%257C000000'
-            url += '%7C'
-            url += str(obj["latitude"])
-            url += ','
-            url += str(obj["longitude"])
-            url += '&'
+        for location in locations:
+            url += ("markers=icon:https://chart.googleapis.com/chart"
+                    "?chst=d_bubble_text_small%%26chld=bbT%%257C"
+                    "%s%%257CB8EDFF%%257C000000%%7C%f,%f&") % (location["username"],
+                    location["latitude"], location["longitude"])
 
         return url
 
     def calculate_center(self, locations):
-        maxY = max([obj["longitude"] for obj in locations])
-        minY = min([obj["longitude"] for obj in locations])
-        maxX = max([obj["latitude"] for obj in locations])
-        minX = min([obj["latitude"] for obj in locations])
+        maxY = max([location["longitude"] for location in locations])
+        minY = min([location["longitude"] for location in locations])
+        maxX = max([location["latitude"] for location in locations])
+        minX = min([location["latitude"] for location in locations])
         
         centerY = (maxY + minY) / 2
         centerX = (maxX + minX) / 2

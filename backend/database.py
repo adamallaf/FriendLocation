@@ -14,7 +14,7 @@ class Database:
         longitude = location_object.get_longitude()
         latitude = location_object.get_latitude()
         self.cur.execute("""INSERT INTO locations (username, longitude, latitude)
-            values (\"%s\", %s, %s) ON DUPLICATE KEY UPDATE longitude=%s, latitude=%s;""",
+            values (%s, %s, %s) ON DUPLICATE KEY UPDATE longitude=%s, latitude=%s;""",
             (username, longitude, latitude, longitude, latitude))
         self.db.commit()
     
@@ -22,7 +22,7 @@ class Database:
         location_objects = []
 
         for username in usernames:
-            self.cur.execute("SELECT username, longitude, latitude FROM locations WHERE username=\"%s\";", (username,))
+            self.cur.execute("SELECT username, longitude, latitude FROM locations WHERE username=%s;", (username,))
             result = self.cur.fetchone()
             if result is not None:
                 location_objects.append({"username": result[0], "longitude": result[1], "latitude": result[2]})
