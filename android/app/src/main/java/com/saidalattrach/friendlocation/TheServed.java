@@ -18,7 +18,7 @@ public class TheServed
 
     private static final int BUFFER_SIZE = 4096;
 
-    private static String host = "46.101.220.28";
+    private static String host = "archoniii.ddns.net";
 
     public static void setHost(String host)
     {

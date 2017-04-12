@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.ServiceConnection;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
 
@@ -29,16 +30,29 @@ public class MainActivity extends Activity
     private static final int DEFAULT_UPDATE_INTERVAL = 30;
 
     private int updateInterval = DEFAULT_UPDATE_INTERVAL;
+    private String username = "";
+    private String ipAddress = "";
+
+    private SwitchCompat enableToggle;
+
+    private NumberPicker picker;
+    private EditText ipAddressView;
+    private EditText usernameView;
 
     private boolean isServiceBound = false;
     private Intent serviceIntent;
     private ServiceConnection serviceConnection;
-    private SwitchCompat enableToggle;
     private MainService.LocalBinder localBinder;
 
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        SharedPreferences preferences = getSharedPreferences("preferences", 0);
+        boolean updateLocation = preferences.getBoolean("update_location", false);
+        updateInterval = preferences.getInt("update_interval", DEFAULT_UPDATE_INTERVAL);
+        ipAddress = preferences.getString("ip_address", "");
+        username = preferences.getString("username", "");
 
         setContentView(R.layout.activity_main);
 
@@ -46,35 +60,43 @@ public class MainActivity extends Activity
         enableToggle.setOnCheckedChangeListener((CompoundButton buttonView, boolean isChecked) ->
         {
             if (isChecked)
+            {
+                preferences.edit().putBoolean("update_location", true).apply();
                 startMainService();
+            }
             else
+            {
+                preferences.edit().putBoolean("update_location", false).apply();
                 stopMainService();
+            }
         });
 
-        NumberPicker picker = (NumberPicker) findViewById(R.id.update_interval_picker);
+        picker = (NumberPicker) findViewById(R.id.update_interval_picker);
         picker.setMinValue(MIN_UPDATE_INTERVAL);
         picker.setMaxValue(MAX_UPDATE_INTERVAL);
-        picker.setValue(DEFAULT_UPDATE_INTERVAL);
+        picker.setValue(updateInterval);
         picker.setOnValueChangedListener((NumberPicker p, int oldVal, int newVal) ->
         {
             updateInterval = newVal;
-            newVal *= 60 * 1000;
-            setUpdateInterval(newVal);
+            preferences.edit().putInt("update_interval", updateInterval).apply();
         });
 
-        EditText ipAddress = (EditText) findViewById(R.id.ip_address);
-        ipAddress.setOnEditorActionListener((TextView v, int actionId, KeyEvent event) ->
+        ipAddressView = (EditText) findViewById(R.id.ip_address);
+        ipAddressView.setText(ipAddress);
+        ipAddressView.setOnEditorActionListener((TextView v, int actionId, KeyEvent event) ->
                 {
-                    TheServed.setHost(v.getText().toString());
+                    ipAddress = v.getText().toString();
+                    preferences.edit().putString("ip_address", ipAddress).apply();
                     return true;
                 }
         );
 
-        EditText username = (EditText) findViewById(R.id.username);
-        username.setOnEditorActionListener((TextView v, int actionId, KeyEvent event) ->
+        usernameView = (EditText) findViewById(R.id.username);
+        usernameView.setText(username);
+        usernameView.setOnEditorActionListener((TextView v, int actionId, KeyEvent event) ->
                 {
-                    if (localBinder != null)
-                        localBinder.setUsername(v.getText().toString());
+                    username = v.getText().toString();
+                    preferences.edit().putString("username", username).apply();
                     return true;
                 }
         );
@@ -96,11 +118,6 @@ public class MainActivity extends Activity
                             status.startResolutionForResult(MainActivity.this, SETTINGS_REQUEST_CODE);
                         } catch (IntentSender.SendIntentException ignored) {}
                     }
-                    else
-                    {
-                        localBinder.setUsername(username.getText().toString());
-                        TheServed.setHost(ipAddress.getText().toString());
-                    }
                 });
             }
 
@@ -109,15 +126,14 @@ public class MainActivity extends Activity
                 isServiceBound = false;
             }
         };
+
+        enableToggle.setChecked(updateLocation);
     }
 
     protected void onStart()
     {
         super.onStart();
-        if (enableToggle.isChecked())
-            startMainService();
-        else
-            stopMainService();
+        bindMainService();
     }
 
     protected void onStop()
@@ -126,21 +142,40 @@ public class MainActivity extends Activity
         unbindMainService();
     }
 
+    private void enableViews()
+    {
+        picker.setEnabled(true);
+        ipAddressView.setEnabled(true);
+        usernameView.setEnabled(true);
+    }
+
+    private void disableViews()
+    {
+        picker.setEnabled(false);
+        ipAddressView.setEnabled(false);
+        usernameView.setEnabled(false);
+    }
+
     private void startMainService()
     {
-        serviceIntent.putExtra("UPDATE_INTERVAL", updateInterval);
+        disableViews();
+        serviceIntent.putExtra("update_interval", updateInterval);
+        serviceIntent.putExtra("ip_address", ipAddress);
+        serviceIntent.putExtra("username", username);
         startService(serviceIntent);
-        bindService(serviceIntent, serviceConnection, 0);
+        bindMainService();
     }
 
     private void stopMainService()
     {
-        if (isServiceBound)
-        {
-            unbindService(serviceConnection);
-            isServiceBound = false;
-        }
+        enableViews();
+        unbindMainService();
         stopService(serviceIntent);
+    }
+
+    private void bindMainService()
+    {
+        bindService(serviceIntent, serviceConnection, 0);
     }
 
     private void unbindMainService()
@@ -150,12 +185,6 @@ public class MainActivity extends Activity
             unbindService(serviceConnection);
             isServiceBound = false;
         }
-    }
-
-    private void setUpdateInterval(long interval)
-    {
-        if (localBinder != null)
-            localBinder.setUpdateInterval(interval);
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data)

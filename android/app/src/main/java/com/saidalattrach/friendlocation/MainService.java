@@ -2,6 +2,7 @@ package com.saidalattrach.friendlocation;
 
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Binder;
 import android.os.Handler;
@@ -32,6 +33,7 @@ public class MainService extends Service implements LocationListener
     private Status resolutionStatus;
 
     private String username = "The Served";
+    private int updateInterval = 60 * 1000;
 
     public void onCreate()
     {
@@ -52,15 +54,26 @@ public class MainService extends Service implements LocationListener
 
     public int onStartCommand (Intent intent, int flags, int startId)
     {
+        System.out.println("Starting service...");
         serviceHandler.post(() ->
         {
-            // If the service is being started by the activity
+            // Check if the service is being started by the activity
             if (intent != null)
             {
-                int updateInterval = intent.getIntExtra("UPDATE_INTERVAL", 30);
-                locationRequest.setInterval(updateInterval * 60 * 1000);
-                locationRequest.setFastestInterval(updateInterval * 60 * 1000);
+                updateInterval = intent.getIntExtra("update_interval", 30) * 60 * 1000;
+                TheServed.setHost(intent.getStringExtra("ip_address"));
+                username = intent.getStringExtra("username");
             }
+            else
+            {
+                SharedPreferences preferences = getSharedPreferences("preferences", 0);
+                updateInterval = preferences.getInt("update_interval", 30) * 60 * 1000;
+                TheServed.setHost(preferences.getString("ip_address", ""));
+                username = preferences.getString("username", "");
+            }
+
+            locationRequest.setInterval(updateInterval);
+            locationRequest.setFastestInterval(updateInterval);
 
             if (client.blockingConnect().isSuccess())
             {
@@ -76,12 +89,9 @@ public class MainService extends Service implements LocationListener
 
     public void onDestroy()
     {
-        serviceHandler.post(() ->
-        {
-            removeLocationUpdates();
-            client.disconnect();
-            System.out.println("Destroying service");
-        });
+        removeLocationUpdates();
+        client.disconnect();
+        System.out.println("Destroying service");
     }
 
     public IBinder onBind(Intent intent)
@@ -102,7 +112,7 @@ public class MainService extends Service implements LocationListener
 
     private void requestLocationUpdates()
     {
-        System.out.println("Requesting location updates");
+        System.out.println("Requesting location updates...");
         try
         {
             LocationServices.FusedLocationApi.requestLocationUpdates(client, locationRequest, this);
@@ -111,6 +121,7 @@ public class MainService extends Service implements LocationListener
 
     private void removeLocationUpdates()
     {
+        System.out.println("Removing location updates...");
         try
         {
             LocationServices.FusedLocationApi.removeLocationUpdates(client, this);
@@ -120,6 +131,8 @@ public class MainService extends Service implements LocationListener
     public void onLocationChanged(Location location)
     {
         serviceHandler.post(() -> processLocationResult(location));
+        removeLocationUpdates();
+        serviceHandler.postDelayed(this::requestLocationUpdates, updateInterval);
     }
 
     private void processLocationResult(Location location)
@@ -130,7 +143,6 @@ public class MainService extends Service implements LocationListener
             TheServed.sendLocationPushQuery(new UserLocation(username, location.getLongitude(),
                     location.getLatitude()));
             System.out.println("Location sent to the server");
-            TheServed.sendLocationPushQuery(new UserLocation(username, (float) location.getLongitude(), (float) location.getLatitude()));
         }
         catch (SocketTimeoutException e)
         {
@@ -149,24 +161,10 @@ public class MainService extends Service implements LocationListener
         public void getStatus(LocationUpdateCallback callback)
         {
             // Lambda-ception...
+            // This ensures that resolutionStatus is not null
             serviceHandler.post(() ->
                 mainHandler.post(() -> callback.onLocationUpdate(resolutionStatus))
             );
-        }
-
-        public void setUpdateInterval(long interval)
-        {
-            serviceHandler.post(() ->
-            {
-                locationRequest.setInterval(interval);
-                locationRequest.setFastestInterval(interval);
-                requestLocationUpdates();
-            });
-        }
-
-        public void setUsername(String username)
-        {
-            MainService.this.username = username;
         }
     }
 

@@ -34,10 +34,8 @@ class FriendLocationBot:
 
     def run(self):
         self.the_database = Database()
-        self.the_database.connect()
         self.updater.start_polling()
         self.updater.idle()
-        self.the_database.close()
 
     def start(self, bot, update):
         bot.sendMessage(chat_id=update.message.chat_id,
@@ -61,7 +59,9 @@ class FriendLocationBot:
             username = first_name
 
         if update.message.chat.type == "group":
+            self.the_database.connect()
             self.the_database.register_user(user.id, username, chat_id)
+            self.the_database.close()
         
             bot.sendMessage(chat_id=chat_id, 
                 text="Registered user %s" % username)
@@ -77,7 +77,9 @@ class FriendLocationBot:
         if username is None:
             username = first_name
 
+        self.the_database.connect()
         self.the_database.unregister_user(user.id, chat_id)
+        self.the_database.close()
 
         bot.sendMessage(chat_id=chat_id, text="Unregistered user %s" % username)
 
@@ -139,7 +141,10 @@ class FriendLocationBot:
         location_array = []
         available_locations = []
 
+        self.the_database.connect()
         usernames = self.the_database.fetch_users(update.message.chat_id)
+        self.the_database.close()
+
         query = {"query" : "location_pull", "usernames" : usernames}
 
         # Pull locations from The Backend
