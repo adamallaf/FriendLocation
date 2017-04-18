@@ -13,7 +13,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 
-import android.view.KeyEvent;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
@@ -21,7 +22,6 @@ import android.widget.EditText;
 import android.widget.NumberPicker;
 
 import android.support.v7.widget.SwitchCompat;
-import android.widget.TextView;
 
 import com.google.android.gms.common.api.Status;
 
@@ -97,24 +97,34 @@ public class MainActivity extends Activity
         // Set up the ip address view
         ipAddressView = (EditText) findViewById(R.id.ip_address);
         ipAddressView.setText(ipAddress);
-        ipAddressView.setOnEditorActionListener((TextView v, int actionId, KeyEvent event) ->
-                {
-                    ipAddress = v.getText().toString();
-                    preferences.edit().putString("ip_address", ipAddress).apply();
-                    return true;
-                }
-        );
+        ipAddressView.addTextChangedListener(new TextWatcher()
+        {
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            public void onTextChanged(CharSequence s, int start, int before, int count)
+            {
+                ipAddress = s.toString();
+                preferences.edit().putString("ip_address", ipAddress).apply();
+            }
+
+            public void afterTextChanged(Editable s) {}
+        });
 
         // Set up the username view
         usernameView = (EditText) findViewById(R.id.username);
         usernameView.setText(username);
-        usernameView.setOnEditorActionListener((TextView v, int actionId, KeyEvent event) ->
-                {
-                    username = v.getText().toString();
-                    preferences.edit().putString("username", username).apply();
-                    return true;
-                }
-        );
+        usernameView.addTextChangedListener(new TextWatcher()
+        {
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            public void onTextChanged(CharSequence s, int start, int before, int count)
+            {
+                username = s.toString();
+                preferences.edit().putString("username", username).apply();
+            }
+
+            public void afterTextChanged(Editable s) {}
+        });
 
         // Set up intent and button to start help activity
         helpIntent = new Intent(this, HelpActivity.class);
