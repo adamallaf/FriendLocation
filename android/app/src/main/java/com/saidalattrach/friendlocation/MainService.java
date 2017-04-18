@@ -33,6 +33,7 @@ public class MainService extends Service implements LocationListener
     private Handler serviceHandler;
     private Handler mainHandler;
 
+    private boolean permissionNeeded = false;
     private Status resolutionStatus;
 
     private String username = "The Served";
@@ -130,7 +131,12 @@ public class MainService extends Service implements LocationListener
         try
         {
             LocationServices.FusedLocationApi.requestLocationUpdates(client, locationRequest, this);
-        } catch (SecurityException ignored) {}
+            permissionNeeded = false;
+        }
+        catch (SecurityException e)
+        {
+            permissionNeeded = true;
+        }
     }
 
     private void removeLocationUpdates()
@@ -172,6 +178,16 @@ public class MainService extends Service implements LocationListener
 
     public class LocalBinder extends Binder
     {
+        public void getPermissionStatus(PermissionStatusCallback callback)
+        {
+            // Lambda-ception...
+            // This ensures that permissionNeeded
+            // is set correctly when the callback is called
+            serviceHandler.post(() ->
+                mainHandler.post(() -> callback.onPermissionCheck(permissionNeeded))
+            );
+        }
+
         public void getStatus(LocationUpdateCallback callback)
         {
             // Lambda-ception...
@@ -186,5 +202,10 @@ public class MainService extends Service implements LocationListener
     public interface LocationUpdateCallback
     {
         void onLocationUpdate(Status status);
+    }
+
+    public interface PermissionStatusCallback
+    {
+        void onPermissionCheck(boolean permissionNeeded);
     }
 }

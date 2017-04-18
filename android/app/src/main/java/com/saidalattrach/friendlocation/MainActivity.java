@@ -1,5 +1,6 @@
 package com.saidalattrach.friendlocation;
 
+import android.Manifest;
 import android.app.Activity;
 
 import android.content.ComponentName;
@@ -8,6 +9,7 @@ import android.content.IntentSender;
 import android.content.ServiceConnection;
 
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 
@@ -23,9 +25,12 @@ import android.widget.TextView;
 
 import com.google.android.gms.common.api.Status;
 
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+
 public class MainActivity extends Activity
 {
     private static final int SETTINGS_REQUEST_CODE = 1;
+    private static final int PERMISSIONS_REQUEST_CODE = 2;
 
     private static final int MIN_UPDATE_INTERVAL = 1;
     private static final int MAX_UPDATE_INTERVAL = 120;
@@ -125,6 +130,23 @@ public class MainActivity extends Activity
             {
                 isServiceBound = true;
                 localBinder = (MainService.LocalBinder) binder;
+
+                localBinder.getPermissionStatus((boolean permissionNeeded) ->
+                {
+                    if (permissionNeeded)
+                    {
+                        if (Build.VERSION.SDK_INT >= 23)
+                        {
+                            requestPermissions(
+                                    new String [] { Manifest.permission.ACCESS_FINE_LOCATION },
+                                    PERMISSIONS_REQUEST_CODE
+                            );
+                        }
+                        else
+                            enableToggle.setChecked(false);
+                    }
+                });
+
                 localBinder.getStatus((Status status) ->
                 {
                     if (!status.isSuccess() && status.hasResolution())
@@ -211,6 +233,17 @@ public class MainActivity extends Activity
         if (requestCode == SETTINGS_REQUEST_CODE)
         {
             if (resultCode == RESULT_OK)
+                startMainService();
+            else
+                enableToggle.setChecked(false);
+        }
+    }
+
+    public void onRequestPermissionsResult (int requestCode, String[] permissions, int[] grantResults)
+    {
+        if (requestCode == PERMISSIONS_REQUEST_CODE)
+        {
+            if (grantResults.length == 1 && grantResults[0] == PERMISSION_GRANTED)
                 startMainService();
             else
                 enableToggle.setChecked(false);
