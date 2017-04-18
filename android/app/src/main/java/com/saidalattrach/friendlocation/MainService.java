@@ -1,5 +1,7 @@
 package com.saidalattrach.friendlocation;
 
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -9,6 +11,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
+import android.support.v7.app.NotificationCompat;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Status;
@@ -74,7 +77,6 @@ public class MainService extends Service implements LocationListener
 
             locationRequest.setInterval(updateInterval);
             locationRequest.setFastestInterval(updateInterval);
-
             if (client.blockingConnect().isSuccess())
             {
                 if (checkLocationSettings())
@@ -82,6 +84,18 @@ public class MainService extends Service implements LocationListener
                 else
                     stopSelf();
             }
+
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                    new Intent(this, MainActivity.class), 0);
+
+            Notification notification = new NotificationCompat.Builder(this)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle("Friend Location Service")
+                    .setContentText("The Friend Location Service is running")
+                    .setContentIntent(pendingIntent)
+                    .build();
+
+            startForeground(1, notification);
         });
 
         return START_STICKY;
@@ -162,6 +176,7 @@ public class MainService extends Service implements LocationListener
         {
             // Lambda-ception...
             // This ensures that resolutionStatus is not null
+            // when the callback is called
             serviceHandler.post(() ->
                 mainHandler.post(() -> callback.onLocationUpdate(resolutionStatus))
             );

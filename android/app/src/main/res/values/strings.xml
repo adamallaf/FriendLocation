@@ -1,9 +1,32 @@
 <resources>
     <string name="app_name">Friend Location</string>
     <string name="action_settings">Settings</string>
-    <string name="service_description">This service regularly sends
-        the device\'s location to
-        the Telegram FriendLocation Bot.</string>
+
+    <string name="service_description">
+        This service regularly sends the device\'s location to
+        the Telegram FriendLocation Bot.
+    </string>
+    
     <string name="enable_prompt">Send location</string>
-    <string name="update_interval_string">Update Interval (in minutes)</string>
+    <string name="update_interval_string">Update interval (in minutes)</string>
+    <string name="username_prompt">Enter username</string>
+    <string name="ip_address_prompt">Enter IP address</string>
+
+    <string name="help">HELP</string>
+
+    <string name="help_text">
+        1. Select the time interval at which to send your location.\n\n
+
+        2. Type in your username. If you are using this app with Telegram,
+        type in either your Telegram username, if you have one, or your first
+        name as shown in the Telegram app.\n\n
+
+        3. Type in the IP address of the server receiving your location.
+        The default is \"archoniii.ddns.net\".\n\n
+
+        4. Enable the \"Send location\" toggle button to start sending your location
+        at the selected time interval. You can close the app and the service will
+        continue to run in the background. To disable it, open the app and disable
+        the \"Send location\" toggle button.
+    </string>
 </resources>

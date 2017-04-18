@@ -56,13 +56,14 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:gravity="center_vertical"
-            android:text="Enter username"
+            android:text="@string/username_prompt"
             android:layout_weight="1"/>
 
         <EditText
             android:id="@+id/username"
             android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:inputType="text"
             android:layout_weight="1"/>
 
     </LinearLayout>
@@ -77,7 +78,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:gravity="center_vertical"
-            android:text="Enter IP address"
+            android:text="@string/ip_address_prompt"
             android:layout_weight="1"/>
 
         <EditText
@@ -88,5 +89,14 @@
             android:layout_weight="1"/>
 
     </LinearLayout>
+
+    <Button
+        android:id="@+id/help_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:textStyle="bold"
+        android:textSize="@dimen/font_size_big"
+        android:text="@string/help"/>
 
 </LinearLayout>

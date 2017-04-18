@@ -12,6 +12,8 @@ import android.os.Bundle;
 import android.os.IBinder;
 
 import android.view.KeyEvent;
+import android.view.View;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.NumberPicker;
@@ -39,6 +41,8 @@ public class MainActivity extends Activity
     private EditText ipAddressView;
     private EditText usernameView;
 
+    private Intent helpIntent;
+
     private boolean isServiceBound = false;
     private Intent serviceIntent;
     private ServiceConnection serviceConnection;
@@ -48,15 +52,18 @@ public class MainActivity extends Activity
     {
         super.onCreate(savedInstanceState);
 
+        // Retrieve settings from previous usage
         SharedPreferences preferences = getSharedPreferences("preferences", 0);
         boolean updateLocation = preferences.getBoolean("update_location", false);
         updateInterval = preferences.getInt("update_interval", DEFAULT_UPDATE_INTERVAL);
-        ipAddress = preferences.getString("ip_address", "");
+        ipAddress = preferences.getString("ip_address", "archoniii.ddns.net");
         username = preferences.getString("username", "");
 
         setContentView(R.layout.activity_main);
 
+        // Set up the toggle button
         enableToggle = (SwitchCompat) findViewById(R.id.enable_update);
+        enableToggle.setChecked(updateLocation);
         enableToggle.setOnCheckedChangeListener((CompoundButton buttonView, boolean isChecked) ->
         {
             if (isChecked)
@@ -71,6 +78,7 @@ public class MainActivity extends Activity
             }
         });
 
+        // Set up the time interval picker
         picker = (NumberPicker) findViewById(R.id.update_interval_picker);
         picker.setMinValue(MIN_UPDATE_INTERVAL);
         picker.setMaxValue(MAX_UPDATE_INTERVAL);
@@ -81,6 +89,7 @@ public class MainActivity extends Activity
             preferences.edit().putInt("update_interval", updateInterval).apply();
         });
 
+        // Set up the ip address view
         ipAddressView = (EditText) findViewById(R.id.ip_address);
         ipAddressView.setText(ipAddress);
         ipAddressView.setOnEditorActionListener((TextView v, int actionId, KeyEvent event) ->
@@ -91,6 +100,7 @@ public class MainActivity extends Activity
                 }
         );
 
+        // Set up the username view
         usernameView = (EditText) findViewById(R.id.username);
         usernameView.setText(username);
         usernameView.setOnEditorActionListener((TextView v, int actionId, KeyEvent event) ->
@@ -101,6 +111,12 @@ public class MainActivity extends Activity
                 }
         );
 
+        // Set up intent and button to start help activity
+        helpIntent = new Intent(this, HelpActivity.class);
+        Button helpButton = (Button) findViewById(R.id.help_button);
+        helpButton.setOnClickListener((View v) -> startActivity(helpIntent));
+
+        // Prepare the service
         serviceIntent = new Intent(this, MainService.class);
 
         serviceConnection = new ServiceConnection()
@@ -127,7 +143,9 @@ public class MainActivity extends Activity
             }
         };
 
-        enableToggle.setChecked(updateLocation);
+        // Disable views if service is running
+        if (updateLocation)
+            disableViews();
     }
 
     protected void onStart()
