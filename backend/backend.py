@@ -11,7 +11,7 @@ class LocationArea:
         self.minLat = min([obj.latitude  for obj in pointList])
         # with this max frame we can calculate a point that lies outside of
         # the location area
-        self.point_out = LocationPoint(self.maxLong + 1, self.maxLat)
+        self.point_out = LocationPoint("", self.maxLong + 1, self.maxLat)
         self.vectors = []
         # Create the vectors that connect all the points
         # Note: it is important that the points are in the correct order

@@ -1,10 +1,9 @@
 import socket,json
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("46.101.220.28", 5000))
+s.connect(("127.0.0.1", 5000))
 #s.connect(("localhost", 80))
-#jspull = json.dumps({'query':'location_push', 'location': {'latitude':
-#    2,'longitude': 3, 'username': 'chavezgt'}}) 
+#jspull = json.dumps({'query':'location_push', 'location': {'latitude': 2,'longitude': 3, 'username': 'chavezgt'}})
 #jspull +='\n'
 #s.send(bytearray(jspull,'utf-8') )
 #print(s.recv(4096))

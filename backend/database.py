@@ -1,5 +1,6 @@
 import mysql.connector
 
+
 class Database:
     def __init__(self):
         self.db = None
@@ -32,3 +33,4 @@ class Database:
     def close(self):
         self.cur.close()
         self.db.close()
+
