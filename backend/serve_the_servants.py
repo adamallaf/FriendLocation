@@ -1,11 +1,14 @@
-import socketserver, json
-from backend import LocationPoint
+import json
+import socketserver
 from database import Database
+from location import LocationPoint
+
 
 # Class for the bad request errors, in order to handle exceptions 
 class BadRequestError(Exception):
     def __init__(self, error_message):
         self.error_message = error_message
+
 
 class TheServant(socketserver.StreamRequestHandler):
     def setup(self):
@@ -70,7 +73,7 @@ class TheServant(socketserver.StreamRequestHandler):
 
                 # insert the object into the database
                 self.the_database.push(location_object)
-                print("Added the following ", location_object.username)
+                print("Added the following ", location_object._username)
                 # Generate and send the JSON response
                 json_response = json.dumps({'ok': True})
             self._sendResponse(json_response)

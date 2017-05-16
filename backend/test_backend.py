@@ -1,7 +1,7 @@
 import pytest
-from backend import LocationArea
-from backend import LocationPoint
-from backend import Vector
+from location import LocationArea
+from location import LocationPoint
+from location import Vector
 
 
 @pytest.fixture(scope="function")

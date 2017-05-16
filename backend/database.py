@@ -11,9 +11,9 @@ class Database:
         self.cur = self.db.cursor()
 
     def push(self, location_object):
-        username = location_object.get_username()
-        longitude = location_object.get_longitude()
-        latitude = location_object.get_latitude()
+        username = location_object.username
+        longitude = location_object.longitude
+        latitude = location_object.latitude
         self.cur.execute("""INSERT INTO locations (username, longitude, latitude)
             values (%s, %s, %s) ON DUPLICATE KEY UPDATE longitude=%s, latitude=%s;""",
             (username, longitude, latitude, longitude, latitude))
