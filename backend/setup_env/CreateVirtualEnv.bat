@@ -8,7 +8,6 @@
 @set SQLCONNECTOR=mysql-connector-python-2.1.6.zip
 
 @set VIRTUAL_ENV=friendLocation
-@endlocal
 
 @cd ..
 %PYTHON% -m pip install setuptools --upgrade
