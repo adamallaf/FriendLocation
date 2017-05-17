@@ -20,7 +20,12 @@ echo -e ${SHEBANG}"\ndeactivate\nunset VIRTUAL_ENV\n" > ${DEACTIVATION_SCRIPT}
 (cd setup_env && pip install -r requirements.txt --upgrade)
 
 # Download and install mysql-connector-python from mysql.com
-(mkdir -p .mysql_build && cd .mysql_build && mkdir -p .sqlconnector && wget ${SQLURL}${SQLCONNECTOR} && bsdtar -xvf ${SQLCONNECTOR} *.tar.gz && tar -zxf *.tar.gz && cd $(ls -d */) && python setup.py install)
+(mkdir -p .mysql_build && cd .mysql_build &&\
+ mkdir -p .sqlconnector && cd .sqlconnector &&\
+  wget ${SQLURL}${SQLCONNECTOR} &&\
+   bsdtar -xvf ${SQLCONNECTOR} *.tar.gz &&\
+    tar -zxf *.tar.gz && cd $(ls -d */) &&\
+     python setup.py install)
 rm -r .mysql_build
 
 . RunUnitTests.sh
