@@ -4,7 +4,6 @@ from database import Database
 from location import LocationPoint
 
 
-# Class for the bad request errors, in order to handle exceptions 
 class BadRequestError(Exception):
     def __init__(self, error_message):
         self.error_message = error_message
@@ -45,7 +44,7 @@ class TheServant(socketserver.StreamRequestHandler):
              raise BadRequestError("Not JSON")
         except KeyError:
             raise BadRequestError("Bad Formatted Request")
-                
+
     def _sendResponse(self, json_response):
         self.wfile.write(bytearray(json_response, 'utf-8'))
 
@@ -65,9 +64,9 @@ class TheServant(socketserver.StreamRequestHandler):
                 longitude = location["longitude"]
                 latitude = location["latitude"]
             except KeyError:
-                raise BadRequestError("Bad formatted location Object") 
                 json_response = json.dumps({'ok': False})
-            else: 
+                raise BadRequestError("Bad formatted location Object")
+            else:
                 # Create a location Object
                 location_object = LocationPoint(username, longitude, latitude)
 
@@ -93,5 +92,7 @@ class TheServant(socketserver.StreamRequestHandler):
             # Send the response
             self._sendResponse(json_response)
 
-server = socketserver.TCPServer(("", 5000), TheServant)
-server.serve_forever()
+
+if __name__ == "_main___":
+    server = socketserver.TCPServer(("", 5000), TheServant)
+    server.serve_forever()
