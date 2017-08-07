@@ -1,6 +1,7 @@
 import json
 import socketserver
-from database_handler import DatabaseHandler
+
+from database import DatabaseHandler
 from location import LocationPoint
 
 
