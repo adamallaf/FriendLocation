@@ -1,6 +1,6 @@
 import json
 import socketserver
-from database import Database
+from database_handler import DatabaseHandler
 from location import LocationPoint
 
 
@@ -10,9 +10,12 @@ class BadRequestError(Exception):
 
 
 class TheServant(socketserver.StreamRequestHandler):
+    def __init__(self, request, client_address, server):
+        super().__init__(request, client_address, server)
+
     def setup(self):
         socketserver.StreamRequestHandler.setup(self)
-        self.the_database = Database()
+        self.the_database = DatabaseHandler()
         self.the_database.connect()
 
     def finish(self):
@@ -32,7 +35,7 @@ class TheServant(socketserver.StreamRequestHandler):
     def _getReq(self):
         # List of supported requests, each term in the dictionary matches to a
         # method (this is our proper handler for each type of request)
-        SUPPORTED_REQUESTS = {"location_push" : self.do_push, "location_pull": self.do_pull}
+        SUPPORTED_REQUESTS = {"location_push": self.do_push, "location_pull": self.do_pull}
         # parse the request
         req = self.rfile.readline().strip().decode('utf-8')
         try:
@@ -93,6 +96,12 @@ class TheServant(socketserver.StreamRequestHandler):
             self._sendResponse(json_response)
 
 
-if __name__ == "_main___":
+if __name__ == "__main__":
+    # db = DatabaseHandler()
+    # db.connect()
+    # db.db.insert("users", "uniqueID", "12874", "username", "Johnny", "password", "123456789")
+    # db.db.insert("users", "uniqueID", "15322", "username", "John", "password", "123456789")
+    # db.db.insert("users", "uniqueID", "10573", "username", "Goerge", "password", "123456789")
+    # db.close()
     server = socketserver.TCPServer(("", 5000), TheServant)
     server.serve_forever()

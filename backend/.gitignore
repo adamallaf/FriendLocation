@@ -1,5 +1,5 @@
 .*
 __pycache__/
 
-ActivateVirtualEnv.*
-DeactivateVirtualEnv.*
+/ActivateVirtualEnv.*
+/DeactivateVirtualEnv.*

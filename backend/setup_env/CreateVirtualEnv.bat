@@ -25,7 +25,7 @@
 @cd ..
 
 :: Download and install mysql-connector-python from mysql.com
-bitsadmin.exe /transfer "downloading mysql-connector-python" %SQLURL%%SQLCONNECTOR% %cd%\%SQLCONNECTOR%
+::bitsadmin.exe /transfer "downloading mysql-connector-python" %SQLURL%%SQLCONNECTOR% %cd%\%SQLCONNECTOR%
 ::python setup.py install
 
 @call %RUN_UT_SCRIPT%
