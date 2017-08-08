@@ -14,11 +14,13 @@ class DatabaseHandler:
     __LOCATION_HISTORY = "location_history"
     __LOCATION = "location"
 
+    db_name = "my.db"
+
     def __init__(self):
         self.db = None
 
     def connect(self):
-        self.db = Database("my.db")
+        self.db = Database(self.db_name)
         self._createUsersTab()
         self._createLocationHistoryTab()
         self._createLocationTab()
