@@ -1,4 +1,5 @@
 import json
+import os
 import pytest
 import socket
 import socketserver
@@ -9,7 +10,7 @@ from serve_the_servants import TheServant
 from database import DatabaseHandler
 
 
-request_result = []
+request_results = deque()
 
 
 @pytest.fixture()
@@ -22,21 +23,20 @@ def requests():
     return requests_list
 
 
-def request(requests):
-    global request_result
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(("127.0.0.1", 5001))
-    client.send(bytearray(requests.popleft(), 'utf-8'))
-    request_result.append(client.recv(4096))
-    client.close()
-    time.sleep(2)
-    if len(requests) >= 1:
-        request(requests)
+def sendRequests(requests):
+    global request_results
+    for req in requests:
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.connect(("127.0.0.1", 5001))
+        client.send(bytearray(req, 'utf-8'))
+        request_results.append(client.recv(4096))
+        client.close()
 
 
 @pytest.fixture(scope="module")
-def server():
-    DatabaseHandler.db_name = "test_database1.db"
+def server(request):
+    db_path = os.path.join(os.getenv("TMP"), "test_database.db")
+    DatabaseHandler.db_name = db_path
     db = DatabaseHandler()
     db.connect()
     db.db.insert("users", "uniqueID", "12874", "username", "Johnny", "password", "123456789")
@@ -44,6 +44,11 @@ def server():
     db.db.insert("users", "uniqueID", "10573", "username", "George", "password", "123456789")
     db.close()
     server = socketserver.TCPServer(("", 5001), TheServant)
+
+    def cleanup():
+        os.remove(db_path)
+
+    request.addfinalizer(cleanup)
     return server
 
 
@@ -57,14 +62,16 @@ def serverServeForever(server):
 
 
 def test_server_fat(server, serverServeForever, requests):
+    js_pull_response = b'{"ok": true, "locations": [{"username": "Johnny", "longitude": 1.0, "latitude": 1.0},' \
+                       b' {"username": "John", "longitude": 25.2, "latitude": -14.43}, {"username": "George", "longitude": 51.13, "latitude": 17.5}]}'
     server_thread = threading.Thread(target=serverServeForever, name="TestServerThread")
-    request_thread = threading.Thread(target=request, name="TestRequests", args=[(requests)])
+    request_thread = threading.Thread(target=sendRequests, name="TestRequests", args=[requests])
     server_thread.setDaemon(True)
     request_thread.setDaemon(True)
     server_thread.start()
-    time.sleep(2)
+    time.sleep(1)
     request_thread.start()
     request_thread.join()
     server.shutdown()
     server_thread.join()
-    print(request_result)
+    assert request_results.pop() == js_pull_response
