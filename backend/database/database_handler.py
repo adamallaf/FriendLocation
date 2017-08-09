@@ -33,7 +33,7 @@ class DatabaseHandler:
 
     def _createLocationHistoryTab(self):
         if not self.db.isTableExist(self.__LOCATION_HISTORY):
-            self.db.createTable(self.__LOCATION_HISTORY, "uniqueID INTEGER UNIQUE")
+            self.db.createTable(self.__LOCATION_HISTORY, "uniqueID INTEGER")
             self.db.addColumn(self.__LOCATION_HISTORY, "username", 'CHAR(16)')
             self.db.addColumn(self.__LOCATION_HISTORY, "longitude", 'FLOAT')
             self.db.addColumn(self.__LOCATION_HISTORY, "latitude", 'FLOAT')
