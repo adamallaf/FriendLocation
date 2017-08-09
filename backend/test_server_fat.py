@@ -33,16 +33,20 @@ def sendRequests(requests):
         client.close()
 
 
-@pytest.fixture(scope="module")
-def server(request):
-    db_path = os.path.join(os.getenv("TMP"), "test_database.db")
-    DatabaseHandler.db_name = db_path
+def populateDatabase():
     db = DatabaseHandler()
     db.connect()
     db.db.insert("users", "uniqueID", "12874", "username", "Johnny", "password", "123456789")
     db.db.insert("users", "uniqueID", "15322", "username", "John", "password", "123456789")
     db.db.insert("users", "uniqueID", "10573", "username", "George", "password", "123456789")
     db.close()
+
+
+@pytest.fixture(scope="module")
+def server(request):
+    db_path = os.path.join(os.getenv("TMP"), "test_database.db")
+    DatabaseHandler.db_name = db_path
+    populateDatabase()
     server = socketserver.TCPServer(("", 5001), TheServant)
 
     def cleanup():
@@ -65,13 +69,9 @@ def test_server_fat(server, serverServeForever, requests):
     js_pull_response = b'{"ok": true, "locations": [{"username": "Johnny", "longitude": 1.0, "latitude": 1.0},' \
                        b' {"username": "John", "longitude": 25.2, "latitude": -14.43}, {"username": "George", "longitude": 51.13, "latitude": 17.5}]}'
     server_thread = threading.Thread(target=serverServeForever, name="TestServerThread")
-    request_thread = threading.Thread(target=sendRequests, name="TestRequests", args=[requests])
     server_thread.setDaemon(True)
-    request_thread.setDaemon(True)
     server_thread.start()
-    time.sleep(1)
-    request_thread.start()
-    request_thread.join()
+    sendRequests(requests)
     server.shutdown()
     server_thread.join()
     assert request_results.pop() == js_pull_response
