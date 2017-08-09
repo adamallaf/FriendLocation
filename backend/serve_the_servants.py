@@ -65,14 +65,14 @@ class TheServant(socketserver.StreamRequestHandler):
             # Create the location Object
             try:
                 username = location["username"]
-                longitude = location["longitude"]
                 latitude = location["latitude"]
+                longitude = location["longitude"]
             except KeyError:
                 json_response = json.dumps({'ok': False})
                 raise BadRequestError("Bad formatted location Object")
             else:
                 # Create a location Object
-                location_object = LocationPoint(username, longitude, latitude)
+                location_object = LocationPoint(username, latitude, longitude)
 
                 # insert the object into the database
                 self.the_database.push(location_object)
@@ -92,7 +92,7 @@ class TheServant(socketserver.StreamRequestHandler):
             # Get the matches from the database
             results = self.the_database.pull(usernames)
             # Generate the JSON response
-            json_response = json.dumps({'ok': True, 'locations' : results})
+            json_response = json.dumps({'ok': True, 'locations': results})
             # Send the response
             self._sendResponse(json_response)
 

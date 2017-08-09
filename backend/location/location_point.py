@@ -3,7 +3,7 @@ import json
 
 class LocationPoint:
     #def __init__(self, userName, userId, timeStamp, longitude, latitude):
-    def __init__(self, username, longitude, latitude):
+    def __init__(self, username, latitude, longitude):
         self._username = username
         self._latitude = latitude
         self._longitude = longitude
@@ -34,9 +34,9 @@ class LocationPoint:
     def longitude(self, value):
         self._longitude = value
 
-    def moveToNewLocation(self, longitude, latitude):
-        self._longitude = longitude
+    def moveToNewLocation(self, latitude, longitude):
         self._latitude = latitude
+        self._longitude = longitude
 
     def convertToJSON(self):
         return json.dumps({'username': self.username, 'latitude': self.latitude, 'longitude': self.longitude})

@@ -66,8 +66,8 @@ def serverServeForever(server):
 
 
 def test_server_fat(server, serverServeForever, requests):
-    js_pull_response = b'{"ok": true, "locations": [{"username": "Johnny", "longitude": 1.0, "latitude": 1.0},' \
-                       b' {"username": "John", "longitude": 25.2, "latitude": -14.43}, {"username": "George", "longitude": 51.13, "latitude": 17.5}]}'
+    js_pull_response = b'{"ok": true, "locations": [{"username": "Johnny", "latitude": 1.0, "longitude": 1.0},' \
+                       b' {"username": "John", "latitude": -14.43, "longitude": 25.2}, {"username": "George", "latitude": 17.5, "longitude": 51.13}]}'
     server_thread = threading.Thread(target=serverServeForever, name="TestServerThread")
     server_thread.setDaemon(True)
     server_thread.start()
