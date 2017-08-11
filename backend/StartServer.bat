@@ -1,0 +1,2 @@
+START "" python run.py
+
