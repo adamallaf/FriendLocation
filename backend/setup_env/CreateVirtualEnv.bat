@@ -5,9 +5,6 @@
 @set DEACTIVATION_SCRIPT=DeactivateVirtualEnv.bat
 @set RUN_UT_SCRIPT=RunUnitTests.bat
 
-@set SQLURL=https://dev.mysql.com/get/Downloads/Connector-Python/
-@set SQLCONNECTOR=mysql-connector-python-2.1.6.zip
-
 @set VIRTUAL_ENV=friendLocation
 
 @cd ..
@@ -23,10 +20,6 @@
 @cd setup_env
 @pip install -r requirements.txt --upgrade
 @cd ..
-
-:: Download and install mysql-connector-python from mysql.com
-::bitsadmin.exe /transfer "downloading mysql-connector-python" %SQLURL%%SQLCONNECTOR% %cd%\%SQLCONNECTOR%
-::python setup.py install
 
 @call %RUN_UT_SCRIPT%
 @endlocal

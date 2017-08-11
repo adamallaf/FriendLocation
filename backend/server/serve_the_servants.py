@@ -27,6 +27,8 @@ class TheServant(socketserver.StreamRequestHandler):
     def handle(self):
         try:
             print("Incoming connection...")
+            print(self.the_database.db.getTable("location"))
+            print(self.the_database.db.getTable("location_history"))
             self._getReq()
         except BadRequestError as e:
             print(e.error_message)

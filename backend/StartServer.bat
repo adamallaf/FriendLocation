@@ -1,2 +1,1 @@
-START "" python run.py
-
+@START "" python run.py

@@ -1,14 +1,13 @@
 import json
-import os
-import pytest
 import socket
 import socketserver
 import threading
-import time
-from collections import deque
-from serve_the_servants import TheServant
-from database import DatabaseHandler
 
+import os
+import pytest
+from collections import deque
+from database import DatabaseHandler
+from server.serve_the_servants import TheServant
 
 request_results = deque()
 
@@ -16,10 +15,12 @@ request_results = deque()
 @pytest.fixture()
 def requests():
     jspush1 = json.dumps({'query': 'location_push', 'location': {'latitude': 1, 'longitude': 1, 'username': 'Johnny', 'uniqueID': 12874}}) + '\n'
-    jspush2 = json.dumps({'query': 'location_push', 'location': {'latitude': -14.43, 'longitude': 25.2, 'username': 'John', 'uniqueID': 15322}}) + '\n'
+    jspush2 = json.dumps({'query': 'location_push', 'location': {'latitude': -14.26, 'longitude': 26.8, 'username': 'John', 'uniqueID': 15322}}) + '\n'
+    jspush4 = json.dumps({'query': 'location_push', 'location': {'latitude': -13.55, 'longitude': 27.33, 'username': 'John', 'uniqueID': 15322}}) + '\n'
+    jspush5 = json.dumps({'query': 'location_push', 'location': {'latitude': -14.43, 'longitude': 25.2, 'username': 'John', 'uniqueID': 15322}}) + '\n'
     jspush3 = json.dumps({'query': 'location_push', 'location': {'latitude': 17.5, 'longitude': 51.13, 'username': 'George', 'uniqueID': 10573}}) + '\n'
     jspull = json.dumps({'query': 'location_pull', 'usernames': ['Johnny', 'John', 'George']}) + '\n'
-    requests_list = deque([jspush1, jspush2, jspush3, jspull])
+    requests_list = deque([jspush1, jspush2, jspush3, jspush4, jspush5, jspull])
     return requests_list
 
 
@@ -74,4 +75,5 @@ def test_server_fat(server, serverServeForever, requests):
     sendRequests(requests)
     server.shutdown()
     server_thread.join()
+    print(js_pull_response)
     assert request_results.pop() == js_pull_response
